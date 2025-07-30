@@ -1,0 +1,4 @@
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=1h
+Unit=example.service

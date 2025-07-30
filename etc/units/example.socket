@@ -1,0 +1,3 @@
+[Socket]
+ListenStream=12345
+Accept=no

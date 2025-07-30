@@ -1,0 +1,8 @@
+[Unit]
+Description=Example Service
+
+[Service]
+ExecStart=/usr/bin/example-daemon
+NotifyAccess=main
+Sandbox=true
+Socket=example.socket
