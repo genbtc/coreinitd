@@ -20,13 +20,14 @@ static sd_event *event = NULL;
 // ─────────────────────────────────────────────────────────────
 // Event loop wrapper (inline version of event_loop.c)
 // ─────────────────────────────────────────────────────────────
+#include "service_manager.h"
 
 static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
     pid_t pid;
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        fprintf(stderr, "[coreinitd] Reaped child PID %d\n", pid);
+        service_manager_reap(pid);
     }
 
     return 0;
@@ -154,6 +155,13 @@ int main(void) {
         return 1;
 
     load_all_units();           // Parses and loads .service files
+    //Starts all valid services
+    for (size_t i = 0; i < unit_count; i++) {
+        if (loaded_units[i].type == UNIT_SERVICE) {
+            service_manager_start(&loaded_units[i]);
+        }
+    }
+
     spawn_all_timer_units();    // Spawns timerd for .timer files
 
     socket_activation_start(event, loaded_units, unit_count);	// socket_activation.c
