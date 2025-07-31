@@ -142,6 +142,19 @@ coreinitd/
 - Introduce optional `dbus-broker` compatibility
 - Explore logging integration via `syslog` or structured stdout capture
 
+
+## Considerations - Suggested Next Steps
+
+1. Feature Expansion (launch logic)
+-    Implement FD passing (LISTEN_FDS) to services
+-    Implement Accept=yes sockets (spawn new service per connection)
+2. System Behavior
+-    Start tracking unit state transitions (inactive → activating → active → failed)
+-    Add rudimentary unit dependency tracking: Requires=, After=
+3. Architecture & Docs
+-    Write up docs/design.md to capture the architecture you’ve implemented
+-    Add meson.build to prepare for builds on other systems
+
 ---
 
 This document serves as the initial technical direction and architectural plan for the `coreinitd` project.
