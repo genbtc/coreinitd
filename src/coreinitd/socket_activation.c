@@ -19,16 +19,44 @@ typedef struct {
 static SocketActivation sockets[MAX_SOCKETS];
 static size_t socket_count = 0;
 
+static Unit *find_matching_service(const Unit *socket_unit, Unit *units, size_t count) {
+    char base[128];
+    strncpy(base, socket_unit->name, sizeof(base));
+    char *ext = strstr(base, ".socket");
+    if (ext) *ext = '\0';
+
+    for (size_t i = 0; i < count; i++) {
+        if (units[i].type != UNIT_SERVICE)
+            continue;
+
+        if (strncmp(units[i].name, base, strlen(base)) == 0)
+            return &units[i];
+    }
+    return NULL;
+}
+
 static int make_socket_nonblocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1) return -1;
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
 
+static Unit *all_units = NULL;
+static size_t unit_total = 0;
+
 static int on_socket_event(sd_event_source *s, int fd, uint32_t revents, void *userdata) {
     SocketActivation *sa = userdata;
 
     if (revents & (EPOLLIN | EPOLLPRI)) {
+		//socket-to-service activation
+		Unit *service = find_matching_service(sa->unit, all_units, unit_total);
+		if (service) {
+		    printf("[socket_activation] Activating service %s for socket %s\n", service->name, sa->unit->name);
+		    service_manager_start(service);
+		} else {
+		    printf("[socket_activation] No matching service for socket %s\n", sa->unit->name);
+		}
+
         struct sockaddr_un client_addr;
         socklen_t addrlen = sizeof(client_addr);
         int client_fd = accept(fd, (struct sockaddr*)&client_addr, &addrlen);
@@ -47,6 +75,9 @@ static int on_socket_event(sd_event_source *s, int fd, uint32_t revents, void *u
 }
 
 int socket_activation_start(sd_event *event, Unit *units, size_t unit_count) {
+	all_units = units;
+	unit_total = unit_count;
+
     for (size_t i = 0; i < unit_count; i++) {
         Unit *u = &units[i];
         if (u->type != UNIT_SOCKET) continue;
