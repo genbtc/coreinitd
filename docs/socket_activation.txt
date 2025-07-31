@@ -1,0 +1,22 @@
+socket_activation.c for Unix Domain Sockets:
+
+	Creating a SOCK_STREAM Unix socket
+	
+	Binding to the filesystem path from ListenStream=
+
+	Setting O_NONBLOCK
+
+	Adding it to the event loop with a read callback
+
+	Accepting incoming connections (for Accept=yes sockets, you’d handle them differently later)
+
+
+socket_stream.c for TCP IPV4 Sockets:
+
+    Parsing .socket units from your loaded units
+
+    Creating, binding, and listening on TCP sockets (basic IPv4 for now)
+
+    Adding sockets to the sd-event loop with readable event callbacks
+
+    Placeholder callback to accept connections or notify service manager
