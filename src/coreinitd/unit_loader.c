@@ -48,6 +48,10 @@ int load_unit(const char *path, Unit *out) {
             strncpy(out->socket, val, sizeof(out->socket) - 1);
         else if (strcasecmp(key, "Sandbox") == 0)
             out->sandbox = (strcasecmp(val, "true") == 0);
+        else if (strcasecmp(key, "ListenStream") == 0)
+            strncpy(out->listen_stream, val, sizeof(out->listen_stream) - 1);
+        else if (strcasecmp(key, "Accept") == 0)
+            out->accept = (strcasecmp(val, "yes") == 0);
         else if (strcasecmp(key, "OnBootSec") == 0)
             strncpy(out->on_boot_sec, val, sizeof(out->on_boot_sec) - 1);
         else if (strcasecmp(key, "OnUnitActiveSec") == 0)

@@ -97,7 +97,9 @@ void load_all_units(void) {
 
     struct dirent *ent;
     while ((ent = readdir(d))) {
-        if (!strstr(ent->d_name, ".service")) continue;
+        if (!(strstr(ent->d_name, ".service") ||
+            strstr(ent->d_name, ".socket") ||
+            strstr(ent->d_name, ".timer"))) continue;
 
         if (unit_count >= MAX_UNITS) {
             fprintf(stderr, "[coreinitd] Unit limit reached\n");
@@ -106,10 +108,17 @@ void load_all_units(void) {
 
         char path[256];
         snprintf(path, sizeof(path), "%s/%s", UNIT_DIR, ent->d_name);
+        const char *type_str = "unknown";
 
         if (load_unit(path, &loaded_units[unit_count]) == 0) {
-            fprintf(stderr, "[coreinitd] Loaded unit: %s → %s\n",
-                ent->d_name, loaded_units[unit_count].exec_start);
+            switch (loaded_units[unit_count].type) {
+                case UNIT_SERVICE: type_str = "service"; break;
+                case UNIT_SOCKET: type_str = "socket"; break;
+                case UNIT_TIMER: type_str = "timer"; break;
+                default: break;
+            }
+            fprintf(stderr, "[coreinitd] Loaded %s unit: %s → %s\n",
+                type_str, ent->d_name, loaded_units[unit_count].exec_start);
             unit_count++;
         } else {
             fprintf(stderr, "[coreinitd] Failed to load %s\n", ent->d_name);
