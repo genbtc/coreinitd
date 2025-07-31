@@ -1,5 +1,4 @@
 // main.c — coreinitd unified daemon with event loop + timerd spawning
-
 #include <systemd/sd-event.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -10,6 +9,11 @@
 #include <dirent.h>
 
 #define UNIT_DIR "./etc/units"
+
+#include "unit_loader.h"
+#define MAX_UNITS 64
+static Unit loaded_units[MAX_UNITS];
+static size_t unit_count = 0;
 
 static sd_event *event = NULL;
 
@@ -84,6 +88,37 @@ void spawn_timerd_for(const char *filename) {
     }
 }
 
+void load_all_units(void) {
+    DIR *d = opendir(UNIT_DIR);
+    if (!d) {
+        perror("opendir");
+        return;
+    }
+
+    struct dirent *ent;
+    while ((ent = readdir(d))) {
+        if (!strstr(ent->d_name, ".service")) continue;
+
+        if (unit_count >= MAX_UNITS) {
+            fprintf(stderr, "[coreinitd] Unit limit reached\n");
+            break;
+        }
+
+        char path[256];
+        snprintf(path, sizeof(path), "%s/%s", UNIT_DIR, ent->d_name);
+
+        if (load_unit(path, &loaded_units[unit_count]) == 0) {
+            fprintf(stderr, "[coreinitd] Loaded unit: %s → %s\n",
+                ent->d_name, loaded_units[unit_count].exec_start);
+            unit_count++;
+        } else {
+            fprintf(stderr, "[coreinitd] Failed to load %s\n", ent->d_name);
+        }
+    }
+
+    closedir(d);
+}
+
 void spawn_all_timer_units(void) {
     DIR *d = opendir(UNIT_DIR);
     if (!d) {
@@ -109,7 +144,8 @@ int main(void) {
     if (event_loop_init() < 0)
         return 1;
 
-    spawn_all_timer_units();
+    load_all_units();           // Parses and loads .service files
+    spawn_all_timer_units();    // Spawns timerd for .timer files
 
     int ret = event_loop_run();
     event_loop_shutdown();
