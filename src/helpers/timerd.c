@@ -1,58 +1,82 @@
-// timerd.c
-// Naive .timer parser that schedules service after OnBootSec
-
+#include "timerd.h"
+#include "unit_loader.h"
+#include "service_manager.h"
+#include <systemd/sd-event.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
 
-int parse_seconds(const char *s) {
-    // Parse simple seconds from strings like "10s"
-    int len = strlen(s);
-    if (len > 1 && s[len - 1] == 's') {
-        char buf[32];
-        strncpy(buf, s, len - 1);
-        buf[len - 1] = '\0';
-        return atoi(buf);
+#define USEC_PER_SEC 1000000
+
+static Unit *all_units = NULL;
+static size_t unit_total = 0;
+
+static int parse_sec_to_int(const char *str, int *out) {
+    if (!str || !out) return -1;
+
+    errno = 0;
+    char *end = NULL;
+    long val = strtol(str, &end, 10);
+
+    if (errno != 0 || end == str || *end != '\0' || val < 0 || val > 86400) {
+        // Arbitrary upper limit of 24 hours for sanity
+        fprintf(stderr, "[timerd] Invalid time string: '%s'\n", str);
+        return -1;
     }
-    return atoi(s);  // fallback
+
+    *out = (int)val;
+    return 0;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s path/to/unit.timer\n", argv[0]);
-        return 1;
-    }
+static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
+    Unit *timer_unit = userdata;
 
-    FILE *f = fopen(argv[1], "r");
-    if (!f) {
-        perror("fopen");
-        return 1;
-    }
+    // Derive base name: foo.timer → foo.service
+    char base[128];
+    strncpy(base, timer_unit->name, sizeof(base));
+    char *ext = strstr(base, ".timer");
+    if (ext) *ext = '\0';
 
-    char line[256];
-    int delay = 0;
-    char service_unit[128] = {0};
-
-    while (fgets(line, sizeof(line), f)) {
-        if (strncmp(line, "OnBootSec=", 10) == 0) {
-            delay = parse_seconds(line + 10);
-        } else if (strncmp(line, "Unit=", 5) == 0) {
-            strncpy(service_unit, line + 5, sizeof(service_unit) - 1);
-            service_unit[strcspn(service_unit, "\r\n")] = '\0'; // trim newline
+    for (size_t i = 0; i < unit_total; i++) {
+        if (all_units[i].type == UNIT_SERVICE &&
+            strncmp(all_units[i].name, base, strlen(base)) == 0) {
+            printf("[timerd] Triggering %s from %s\n", all_units[i].name, timer_unit->name);
+            service_manager_start(&all_units[i]);
+            break;
         }
     }
 
-    fclose(f);
+    return 0;
+}
 
-    if (delay > 0) {
-        sleep(delay);
-    }
+int timerd_start(sd_event *event, Unit *units, size_t count) {
+    all_units = units;
+    unit_total = count;
 
-    if (strlen(service_unit) > 0) {
-        char path[256];
-        snprintf(path, sizeof(path), "./scripts/start-unit.sh %s", service_unit);
-        system(path);  // replace with exec() or IPC later
+    for (size_t i = 0; i < count; i++) {
+        Unit *u = &units[i];
+        if (u->type != UNIT_TIMER) continue;
+
+        int seconds = 0;
+        if (parse_sec_to_int(u->on_boot_sec, &seconds) != 0 || seconds <= 0) {
+            fprintf(stderr, "[timerd] Skipping %s (invalid OnBootSec)\n", u->name);
+            continue;
+        }
+
+        uint64_t now;
+        sd_event_now(event, CLOCK_MONOTONIC, &now);
+        uint64_t trigger_time = now + ((uint64_t)seconds * USEC_PER_SEC);
+
+        sd_event_source *source;
+        int r = sd_event_add_time(event, &source, CLOCK_MONOTONIC, trigger_time,
+                                  0, on_timer_event, u);
+        if (r < 0) {
+            fprintf(stderr, "[timerd] Failed to schedule timer %s: %s\n", u->name, strerror(-r));
+            continue;
+        }
+
+        printf("[timerd] Scheduled %s to trigger in %d seconds\n", u->name, seconds);
     }
 
     return 0;
