@@ -1,4 +1,4 @@
-# coreinitd: A Minimal Init and Service Manager using Bash + libsystemd
+# coreinitd: A Minimal Init and Service Manager using Bash + libsystemd + C Helpers
 
 ## Overview
 
@@ -11,6 +11,23 @@
 - `logind` is present and functional (for user/session D-Bus access)
 - `journald` is not required (logs go to plain files or stdout/stderr)
 - The goal is *not* to clone all of systemd, but to support a minimal working alternative
+
+## Current Components
+| Module                | Status | Description                                               |
+| --------------------- | ------ | --------------------------------------------------------- |
+| `main.c`              | ✅      | Initializes the system, event loop, unit loading          |
+| `event_loop.c`        | ✅      | Wraps `sd-event`                                          |
+| `unit_loader.c`       | ✅      | Parses `.service`, `.socket`, `.timer` units into structs |
+| `socket_activation.c` | ✅      | Binds and monitors `ListenStream` Unix sockets            |
+| `service_manager.c`   | ✅      | Starts `.service` units, tracks state                     |
+| `timerd.c`            | 🟡     | Spawns dummy timer handlers (needs service linkage)       |
+
+## Internal State
+-    Unit loaded_units[] is global and shared across all subsystems
+-    Services are being launched directly after unit load, and socket events trigger services
+-    Reaping of dead processes is connected to event loop and tracked
+-    No FD passing yet (LISTEN_FDS), no real sandboxing or cgroups yet
+-    No Accept=yes logic (per-client socket forking)
 
 ## Core Components
 
@@ -77,6 +94,7 @@ Unit=foo.service
 
 ## Directory Layout
 
+Old:
 ```
 coreinitd/
 ├── coreinitd/                # C implementation of the main system daemon
@@ -97,7 +115,28 @@ coreinitd/
 └── meson.build               # Build system for helpers and coreinitd
 ```
 
-## Future Considerations
+New:
+```
+coreinitd/
+├── meson.build           ← future build system
+├── README.md
+├── docs/
+│   ├── plan.md
+│   └── design.md         ← create this soon
+├── etc/
+│   └── units/            ← your `.service`, `.socket`, `.timer` files
+├── src/
+│   └── coreinitd/
+│       ├── main.c
+│       ├── event_loop.c/.h
+│       ├── unit_loader.c/.h
+│       ├── socket_activation.c/.h
+│       ├── service_manager.c/.h
+│       ├── timerd.c/.h     ← still stubbed
+│       └── util.c/.h       ← shared helpers (coming soon)
+```
+
+## Future Considerations v1
 
 - Add support for graphical targets
 - Introduce optional `dbus-broker` compatibility
