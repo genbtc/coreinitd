@@ -13,13 +13,16 @@ typedef struct {
     char name[128];
     char description[256];
 
-    // [Service]
+    // For Service units
     char exec_start[256];
     char notify_access[32];
-    char socket[128];
     int sandbox;
 
-    // [Timer]
+    // For Socket units
+    char listen_stream[64];
+    int accept;
+
+    // For Timer units
     char on_boot_sec[32];
     char on_active_sec[32];
     char timer_unit[128];
