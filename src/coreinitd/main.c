@@ -156,7 +156,10 @@ int main(void) {
     load_all_units();           // Parses and loads .service files
     spawn_all_timer_units();    // Spawns timerd for .timer files
 
+    socket_activation_start(event, loaded_units, unit_count);	// socket_activation.c
+
     int ret = event_loop_run();
+    socket_activation_stop();
     event_loop_shutdown();
     return ret;
 }
