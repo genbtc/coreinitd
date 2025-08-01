@@ -2,7 +2,7 @@ project('coreinitd', 'c',
   version : '0.1',
   default_options : ['warning_level=2', 'c_std=gnu11'])
 
-libsystemd_dep = dependency('systemd', required: true)
+libsystemd_dep = dependency('libelogind', required: true)
 
 coreinitd_src = files(
   'src/coreinitd/main.c',
@@ -10,7 +10,6 @@ coreinitd_src = files(
   'src/coreinitd/unit_loader.c',
   'src/coreinitd/socket_activation.c',
   'src/coreinitd/service_manager.c',
-  'src/coreinitd/timerd.c'
 )
 
 helpers_src = files(
