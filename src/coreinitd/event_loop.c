@@ -22,13 +22,15 @@ static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, voi
 
 // Register SIGCHLD Handler
 int event_loop_init(void) {
-    static sd_event_source *sigchld_src = NULL;
-    int r = sd_event_default(&event);
+    sd_event_source *sigchld_src = NULL;
+	int r = -1;
+	if (!event)
+	    r = sd_event_default(&event);
     if (r < 0) {
         fprintf(stderr, "[coreinitd-event] Failed to create event loop: %s\n", strerror(-r));
         return -1;
     }
-    if (sigchld_src == NULL) {
+    if (event && sigchld_src == NULL) {
         r = sd_event_add_signal(event, &sigchld_src, SIGCHLD, on_sigchld, NULL);
         if (r < 0) {
             if (r == -EBUSY)
