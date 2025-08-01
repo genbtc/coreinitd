@@ -15,60 +15,8 @@
 static Unit loaded_units[MAX_UNITS];
 static size_t unit_count = 0;
 
-static sd_event *event = NULL;
-
-// ─────────────────────────────────────────────────────────────
-// Event loop wrapper (inline version of event_loop.c)
-// ─────────────────────────────────────────────────────────────
 #include "service_manager.h"
 #include "socket_activation.h"
-
-static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
-    pid_t pid;
-    int status;
-
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        service_manager_reap(pid);
-    }
-
-    return 0;
-}
-/*
-int event_loop_init(void) {
-    int r = sd_event_default(&event);
-    if (r < 0) {
-        fprintf(stderr, "[coreinitd] Failed to create event loop: %s\n", strerror(-r));
-        return -1;
-    }
-
-    sd_event_source *sigchld_src = NULL;
-    r = sd_event_add_signal(event, &sigchld_src, SIGCHLD, on_sigchld, NULL);
-    if (r < 0) {
-        fprintf(stderr, "[coreinitd] Failed to add SIGCHLD handler: %s\n", strerror(-r));
-        return -1;
-    }
-
-    sd_event_source_set_priority(sigchld_src, SD_EVENT_PRIORITY_NORMAL);
-    return 0;
-}
-
-int event_loop_run(void) {
-    fprintf(stderr, "[coreinitd] Starting event loop...\n");
-    int r = sd_event_loop(event);
-    if (r < 0) {
-        fprintf(stderr, "[coreinitd] Event loop error: %s\n", strerror(-r));
-        return -1;
-    }
-    return 0;
-}
-
-void event_loop_shutdown(void) {
-    if (event) {
-        sd_event_unref(event);
-        event = NULL;
-    }
-}
-*/
 #include "event_loop.h"
 
 // ─────────────────────────────────────────────────────────────
@@ -154,6 +102,7 @@ void spawn_all_timer_units(void) {
 // ─────────────────────────────────────────────────────────────
 
 int main(void) {
+    fprintf(stderr, "[coreinitd-main] Starting...\n");
     if (event_loop_init() < 0)
         return 1;
 
