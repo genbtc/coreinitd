@@ -13,16 +13,13 @@ coreinitd_src = files(
   'src/coreinitd/timerd.c'
 )
 
-helpers_src = files(
-  'src/helpers/get_unit_info.c',
-  'src/helpers/listen_fds.c',
-  'src/helpers/notify_ready.c',
-  'src/helpers/sandbox_launch.c',
-)
+# Helper binaries (each has its own main())
+executable('get_unit_info', 'src/helpers/get_unit_info.c')
+executable('listen_fds',    'src/helpers/listen_fds.c', dependencies: libsystemd_dep)
+executable('notify_ready',  'src/helpers/notify_ready.c', dependencies: libsystemd_dep)
+executable('sandbox_launch','src/helpers/sandbox_launch.c')
 
-all_sources = coreinitd_src + helpers_src
-
-executable('coreinitd', all_sources,
+executable('coreinitd', coreinitd_src,
   dependencies: libsystemd_dep,
   install: true,
   install_dir: '/sbin',

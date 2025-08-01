@@ -33,7 +33,7 @@ static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, voi
 
     return 0;
 }
-
+/*
 int event_loop_init(void) {
     int r = sd_event_default(&event);
     if (r < 0) {
@@ -68,6 +68,8 @@ void event_loop_shutdown(void) {
         event = NULL;
     }
 }
+*/
+#include "event_loop.h"
 
 // ─────────────────────────────────────────────────────────────
 // Timer unit launcher (replaces spawn_timerd_for + loop)
