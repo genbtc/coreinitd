@@ -10,6 +10,7 @@ coreinitd_src = files(
   'src/coreinitd/unit_loader.c',
   'src/coreinitd/socket_activation.c',
   'src/coreinitd/service_manager.c',
+  'src/coreinitd/timerd.c'
 )
 
 helpers_src = files(
@@ -17,7 +18,6 @@ helpers_src = files(
   'src/helpers/listen_fds.c',
   'src/helpers/notify_ready.c',
   'src/helpers/sandbox_launch.c',
-  'src/helpers/timerd.c'
 )
 
 all_sources = coreinitd_src + helpers_src

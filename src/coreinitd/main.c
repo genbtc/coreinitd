@@ -21,6 +21,7 @@ static sd_event *event = NULL;
 // Event loop wrapper (inline version of event_loop.c)
 // ─────────────────────────────────────────────────────────────
 #include "service_manager.h"
+#include "socket_activation.h"
 
 static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
     pid_t pid;
@@ -107,7 +108,7 @@ void load_all_units(void) {
             break;
         }
 
-        char path[256];
+        char path[512];
         snprintf(path, sizeof(path), "%s/%s", UNIT_DIR, ent->d_name);
         const char *type_str = "unknown";
 

@@ -44,13 +44,13 @@ int load_unit(const char *path, Unit *out) {
             strncpy(out->exec_start, val, sizeof(out->exec_start) - 1);
         else if (strcasecmp(key, "NotifyAccess") == 0)
             strncpy(out->notify_access, val, sizeof(out->notify_access) - 1);
-        else if (strcasecmp(key, "Socket") == 0)
-            strncpy(out->socket, val, sizeof(out->socket) - 1);
-        else if (strcasecmp(key, "Sandbox") == 0)
-            out->sandbox = (strcasecmp(val, "true") == 0);
-        else if (strcasecmp(key, "ListenStream") == 0)
+        else if (out->type == UNIT_SERVICE && strcasecmp(key, "Socket") == 0) {
+            strncpy(out->socket_unit, val, sizeof(out->socket_unit) - 1);
+            out->socket_unit[sizeof(out->socket_unit) - 1] = '\0';
+        } else if (out->type == UNIT_SOCKET && strcasecmp(key, "ListenStream") == 0) {
             strncpy(out->listen_stream, val, sizeof(out->listen_stream) - 1);
-        else if (strcasecmp(key, "Accept") == 0)
+            out->listen_stream[sizeof(out->listen_stream) - 1] = '\0';
+        } else if (strcasecmp(key, "Accept") == 0)
             out->accept = (strcasecmp(val, "yes") == 0);
         else if (strcasecmp(key, "OnBootSec") == 0)
             strncpy(out->on_boot_sec, val, sizeof(out->on_boot_sec) - 1);
@@ -58,6 +58,8 @@ int load_unit(const char *path, Unit *out) {
             strncpy(out->on_active_sec, val, sizeof(out->on_active_sec) - 1);
         else if (strcasecmp(key, "Unit") == 0)
             strncpy(out->timer_unit, val, sizeof(out->timer_unit) - 1);
+        else if (strcasecmp(key, "Sandbox") == 0)
+            out->sandbox = (strcasecmp(val, "true") == 0);
     }
 
     fclose(f);

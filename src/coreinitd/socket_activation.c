@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <systemd/sd-event.h>
 #include "unit_loader.h"
+#include "service_manager.h"
+#include "socket_activation.h"
 
 typedef struct {
     int fd;

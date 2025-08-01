@@ -1,6 +1,7 @@
 #ifndef COREINITD_SERVICE_MANAGER_H
 #define COREINITD_SERVICE_MANAGER_H
 
+#include <sys/types.h>
 #include "unit_loader.h"
 
 typedef enum {
