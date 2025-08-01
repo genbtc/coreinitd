@@ -1,6 +1,7 @@
 // event_loop.c — sd_event loop wrapper for coreinitd
 #include "event_loop.h"
 #include <systemd/sd-event.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,8 +20,8 @@ static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, voi
     return 0;
 }
 
+// Register SIGCHLD Handler
 int event_loop_init(void) {
-    // Register SIGCHLD
     static sd_event_source *sigchld_src = NULL;
     int r = sd_event_default(&event);
     if (r < 0) {
@@ -30,8 +31,11 @@ int event_loop_init(void) {
     if (sigchld_src == NULL) {
         r = sd_event_add_signal(event, &sigchld_src, SIGCHLD, on_sigchld, NULL);
         if (r < 0) {
-            fprintf(stderr, "[coreinitd-event] Failed to add SIGCHLD handler: %s\n", strerror(-r));
-            return -1;
+            if (r == -EBUSY)
+                fprintf(stderr, "[coreinitd-event] SIGCHLD already has a handler!\n");
+            else
+                fprintf(stderr, "[coreinitd-event] Failed to add SIGCHLD handler: %s (%d)\n", strerror(-r), -r);
+            return r;
         }
         sd_event_source_set_priority(sigchld_src, SD_EVENT_PRIORITY_NORMAL);
     } else {
