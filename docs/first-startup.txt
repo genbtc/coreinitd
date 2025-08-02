@@ -1,0 +1,34 @@
+genr8eofl@genr8too ~/src/coreinitd $ cat ./etc/units/example.service
+[Unit]
+Description=Example Service
+
+[Service]
+ExecStart=/usr/bin/example-daemon
+NotifyAccess=main
+Sandbox=true
+Socket=example.socket
+
+genr8eofl@genr8too ~/src/coreinitd $ cat ./etc/units/example.timer 
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=1h
+Unit=example.service
+
+genr8eofl@genr8too ~/src/coreinitd $ cat ./etc/units/example.socket 
+[Socket]
+ListenStream=12345
+Accept=no
+
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --help
+[coreinitd-main] Starting...
+[coreinitd] Loaded socket unit: example.socket → 
+[coreinitd] Loaded timer unit: example.timer → 
+[coreinitd] Loaded service unit: example.service → /usr/bin/example-daemon
+[service_manager] Started ./etc/units/example.service (PID 2266)
+[coreinitd] Started timerd for example.timer (PID 2267)
+execl failed for timerd: No such file or directory
+Failed to add socket event source: Invalid argument
+[coreinitd-event] Starting event loop...
+[coreinitd-event] Event loop error: Invalid argument
+ sh: line 1: /usr/bin/example-daemon: No such file or directory
+genr8eofl@genr8too ~/src/coreinitd $

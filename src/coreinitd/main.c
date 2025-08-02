@@ -1,4 +1,6 @@
 // main.c — coreinitd unified daemon with event loop + timerd spawning
+// 					  systemd executor + socket activation
+// 2025(C) genr8eofl - @ gentoo libera IRC
 #include <systemd/sd-event.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -19,10 +21,9 @@ static size_t unit_count = 0;
 #include "socket_activation.h"
 #include "event_loop.h"
 
-// ─────────────────────────────────────────────────────────────
-// Timer unit launcher (replaces spawn_timerd_for + loop)
-// ─────────────────────────────────────────────────────────────
-
+// ───────────────────
+// Timer unit launcher
+// ───────────────────
 void spawn_timerd_for(const char *filename) {
     char path[256];
     snprintf(path, sizeof(path), "%s/%s", UNIT_DIR, filename);
@@ -43,7 +44,7 @@ void spawn_timerd_for(const char *filename) {
 void load_all_units(void) {
     DIR *d = opendir(UNIT_DIR);
     if (!d) {
-        perror("opendir");
+        perror("opendir failed");
         return;
     }
 
@@ -83,28 +84,27 @@ void load_all_units(void) {
 void spawn_all_timer_units(void) {
     DIR *d = opendir(UNIT_DIR);
     if (!d) {
-        perror("opendir");
+        perror("opendir failed");
         return;
     }
 
     struct dirent *ent;
     while ((ent = readdir(d))) {
-        if (strstr(ent->d_name, ".timer")) {
+        if (strstr(ent->d_name, ".timer"))
             spawn_timerd_for(ent->d_name);
-        }
     }
 
     closedir(d);
 }
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────
 // Main Entry Point
-// ─────────────────────────────────────────────────────────────
-
+// ─────────────────
 int main(void) {
     fprintf(stderr, "[coreinitd-main] Starting...\n");
-    if (event_loop_init() < 0)
-        return 1;
+//TODO: [coreinitd-event] SIGCHLD already has a handler!
+//    if (event_loop_init() < 0)
+//        return 1;
 
     load_all_units();           // Parses and loads .service files
     //Starts all valid services
