@@ -3,8 +3,9 @@
 #define COREINITD_EVENT_LOOP_H
 
 #include <systemd/sd-event.h>
-#include <stddef.h>
-static sd_event *event = NULL;
+
+// Global event loop pointer accessible to all modules
+extern sd_event *event;
 
 int event_loop_init(void);
 int event_loop_run(void);

@@ -1,12 +1,16 @@
 // event_loop.c — sd_event loop wrapper for coreinitd
 #include "event_loop.h"
-#include <systemd/sd-event.h>
-#include <errno.h>
-#include <signal.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <systemd/sd-event.h>
+#include <signal.h>
 #include <sys/wait.h>
+#include <errno.h>
+#include <unistd.h>
+
+// Global event loop pointer - accessible to all modules
+sd_event *event = NULL;
 
 // Basic SIGCHLD handler: reaps children
 static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
@@ -22,15 +26,18 @@ static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, voi
 
 // Register SIGCHLD Handler
 int event_loop_init(void) {
-    sd_event_source *sigchld_src = NULL;
-	int r = -1;
-	if (!event)
-	    r = sd_event_default(&event);
-    if (r < 0) {
-        fprintf(stderr, "[coreinitd-event] Failed to create event loop: %s\n", strerror(-r));
-        return -1;
+    static sd_event_source *sigchld_src = NULL;
+    int r = -1;
+
+    if (!event) {
+        r = sd_event_default(&event);
+        if (r < 0) {
+            fprintf(stderr, "[coreinitd-event] Failed to create event loop: %s\n", strerror(-r));
+            return -1;
+        }
     }
-    if (event && sigchld_src == NULL) {
+
+    if (sigchld_src == NULL && event) {
         r = sd_event_add_signal(event, &sigchld_src, SIGCHLD, on_sigchld, NULL);
         if (r < 0) {
             if (r == -EBUSY)
@@ -40,8 +47,7 @@ int event_loop_init(void) {
             return r;
         }
         sd_event_source_set_priority(sigchld_src, SD_EVENT_PRIORITY_NORMAL);
-    } else {
-        fprintf(stderr, "[coreinitd-event] SIGCHLD handler already registered.\n");
+        fprintf(stderr, "[coreinitd-event] SIGCHLD handler registered\n");
     }
 
     return 0;
