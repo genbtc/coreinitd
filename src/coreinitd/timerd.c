@@ -9,9 +9,15 @@
 #include "service_manager.h"
 
 #define USEC_PER_SEC 1000000
+#define MAX_TIMERS 64
 
 static Unit *all_units = NULL;
 static size_t unit_total = 0;
+
+// Track all timer sources for cleanup
+static sd_event_source *timer_sources[MAX_TIMERS];
+static TimerContext *timer_contexts[MAX_TIMERS];
+static size_t timer_count_total = 0;
 
 /**
  * find_service_for_timer() - Locate the service unit triggered by a timer
@@ -202,11 +208,62 @@ int timerd_start(sd_event *event, Unit *units, size_t count) {
             continue;
         }
 
+        // Track source and context for cleanup
+        if (timer_count_total < MAX_TIMERS) {
+            timer_sources[timer_count_total] = source;
+            timer_contexts[timer_count_total] = ctx;
+            timer_count_total++;
+        }
+
         fprintf(stderr, "[timerd] Scheduled %s to trigger in %" PRIu64 " usec\n",
                 u->name, trigger_time - now);
         timer_count++;
     }
 
     fprintf(stderr, "[timerd] Initialized %d timer unit(s)\n", timer_count);
+    return 0;
+}
+
+/**
+ * timerd_stop() - Unregister and clean up all active timers
+ * @event: sd_event loop that timers were registered with
+ *
+ * Unrefs all timer sources from the event loop and frees all
+ * associated TimerContext structures allocated during timerd_start().
+ *
+ * Returns 0 on success, negative errno on failure.
+ */
+int timerd_stop(sd_event *event) {
+    if (!event) {
+        fprintf(stderr, "[timerd] Invalid event pointer to timerd_stop\n");
+        return -1;
+    }
+
+    if (timer_count_total == 0) {
+        fprintf(stderr, "[timerd] No timers to stop\n");
+        return 0;
+    }
+
+    fprintf(stderr, "[timerd] Stopping %zu timer(s)...\n", timer_count_total);
+
+    for (size_t i = 0; i < timer_count_total; i++) {
+        if (timer_sources[i]) {
+            fprintf(stderr, "[timerd] Unregistering timer source %zu\n", i);
+            sd_event_source_unref(timer_sources[i]);
+            timer_sources[i] = NULL;
+        }
+
+        if (timer_contexts[i]) {
+            fprintf(stderr, "[timerd] Freeing timer context %zu\n", i);
+            free(timer_contexts[i]);
+            timer_contexts[i] = NULL;
+        }
+    }
+
+    timer_count_total = 0;
+    all_units = NULL;
+    unit_total = 0;
+
+    fprintf(stderr, "[timerd] All timers stopped and cleaned up\n");
     return 0;
 }
