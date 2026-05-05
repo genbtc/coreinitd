@@ -89,6 +89,8 @@ int main(void) {
     int ret = event_loop_run();
 
     //Stop, Teardown
+    service_manager_stop_all();
+    timerd_stop(event);
     socket_activation_stop();
     event_loop_shutdown();
 
