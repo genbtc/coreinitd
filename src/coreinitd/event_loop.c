@@ -1,13 +1,13 @@
 // event_loop.c — sd_event loop wrapper for coreinitd
-#include "event_loop.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <systemd/sd-event.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <errno.h>
 #include <unistd.h>
+#include <systemd/sd-event.h>
+#include "event_loop.h"
 
 // Global event loop pointer - accessible to all modules
 sd_event *event = NULL;

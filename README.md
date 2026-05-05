@@ -7,7 +7,8 @@ A minimal init and service manager built using Bash and libsystemd.
 ## Overview
 
 `coreinitd` is designed to provide a lightweight alternative to systemd, using bash scripts for orchestration and small C helpers linked against `libsystemd` for low-level system integration. 
-It supports essential features such as socket and timer activation, service supervision, cgroups-based sandboxing, and D-Bus unit management.
+It supports essential features such as socket and timer activation, service supervision, 
+Soon to suppor: cgroups-based sandboxing, and D-Bus unit management.
 
 ## Project Structure
 
@@ -20,7 +21,7 @@ It supports essential features such as socket and timer activation, service supe
 
 ## Getting Started
 
-1. Build the helpers and core daemon.
+1. use `meson` to Build. includes the helpers and core daemon.
 2. Place your unit files in `etc/units/`.
 3. Use `init.sh` as the system's init or for testing in containers.
 
@@ -32,7 +33,7 @@ It supports essential features such as socket and timer activation, service supe
 
 ## License
 
-TBD
+TBD most likely GPL
 
 ## Contact
 

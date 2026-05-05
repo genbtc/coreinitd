@@ -1,0 +1,41 @@
+genr8eofl@genr8too ~/src/coreinitd/build $ meson compile
+INFO: autodetecting backend as ninja
+INFO: calculating backend command to run: /usr/bin/ninja
+[8/18] Compiling C object coreinitd.p/src_coreinitd_main.c.o
+In file included from ../src/coreinitd/main.c:19:
+../src/coreinitd/socket_activation.h:15:15: warning: 'socket_count' defined but not used [-Wunused-variable]
+   15 | static size_t socket_count = 0;
+      |               ^~~~~~~~~~~~
+../src/coreinitd/socket_activation.h:14:25: warning: 'sockets' defined but not used [-Wunused-variable]
+   14 | static SocketActivation sockets[MAX_SOCKETS];
+      |                         ^~~~~~~
+[9/18] Compiling C object coreinitd.p/src_coreinitd_event_loop.c.o
+../src/coreinitd/event_loop.c: In function 'on_sigchld':
+../src/coreinitd/event_loop.c:16:40: warning: unused parameter 's' [-Wunused-parameter]
+   16 | static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
+      |                       ~~~~~~~~~~~~~~~~~^
+../src/coreinitd/event_loop.c:16:74: warning: unused parameter 'si' [-Wunused-parameter]
+   16 | static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
+      |                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/coreinitd/event_loop.c:16:84: warning: unused parameter 'userdata' [-Wunused-parameter]
+   16 | static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, void *userdata) {
+      |                                                                              ~~~~~~^~~~~~~~
+[11/18] Compiling C object coreinitd.p/src_coreinitd_timerd.c.o
+../src/coreinitd/timerd.c: In function 'on_timer_event':
+../src/coreinitd/timerd.c:76:56: warning: unused parameter 'usec' [-Wunused-parameter]
+   76 | static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
+      |                                               ~~~~~~~~~^~~~
+[12/18] Compiling C object coreinitd.p/src_coreinitd_socket_activation.c.o
+../src/coreinitd/socket_activation.c: In function 'on_socket_event':
+../src/coreinitd/socket_activation.c:39:45: warning: unused parameter 's' [-Wunused-parameter]
+   39 | static int on_socket_event(sd_event_source *s, int fd, uint32_t revents, void *userdata) {
+      |                            ~~~~~~~~~~~~~~~~~^
+[13/18] Compiling C object example-daemon.p/src_helpers_example-daemon.c.o
+../src/helpers/example-daemon.c: In function 'main':
+../src/helpers/example-daemon.c:120:70: warning: '%s' directive output may be truncated writing up to 255 bytes into a region of size 237 [-Wformat-truncation=]
+  120 |         snprintf(config_msg, sizeof(config_msg), "Using config file: %s", config_file);
+      |                                                                      ^~   ~~~~~~~~~~~
+../src/helpers/example-daemon.c:120:9: note: 'snprintf' output between 20 and 275 bytes into a destination of size 256
+  120 |         snprintf(config_msg, sizeof(config_msg), "Using config file: %s", config_file);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[18/18] Linking target coreinitd

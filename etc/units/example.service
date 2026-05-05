@@ -2,7 +2,7 @@
 Description=Example Service
 
 [Service]
-ExecStart=/usr/bin/example-daemon
+ExecStart=example-daemon
 NotifyAccess=main
 Sandbox=true
 Socket=example.socket

@@ -1,6 +1,6 @@
 // main.c — coreinitd unified daemon with event loop + integrated timer handling
 //           systemd executor + socket activation
-// 2025(C) genr8eofl - @ gentoo libera IRC
+// 2025,2026 (C) genr8eofl - @ gentoo libera IRC
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -86,9 +86,11 @@ int main(void) {
     timerd_start(event, loaded_units, unit_count);
 
     int ret = event_loop_run();
-    
+
     //Stop, Teardown
     socket_activation_stop();
     event_loop_shutdown();
+
+    fprintf(stderr, "[coreinitd-main] Stopped All & Shutdown.\n");
     return ret;
 }
