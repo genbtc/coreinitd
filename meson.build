@@ -31,6 +31,9 @@ executable('get_unit_info', 'src/helpers/get_unit_info.c')
 executable('listen_fds',    'src/helpers/listen_fds.c', dependencies: libsd)
 executable('notify_ready',  'src/helpers/notify_ready.c', dependencies: libsd)
 executable('sandbox_launch','src/helpers/sandbox_launch.c')
+executable('example-daemon','src/helpers/example-daemon.c', 
+  install: true,
+  install_dir: '/usr/bin')
 
 #Main coreinitd
 executable('coreinitd', coreinitd_src,
