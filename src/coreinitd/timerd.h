@@ -32,7 +32,18 @@ typedef struct {
  * Returns 0 on success, negative errno on failure.
  */
 int timerd_start(sd_event *event, Unit *units, size_t count);
-//#TODO: timerd_stop //add a method to unregister 
+
+/**
+ * timerd_stop() - Unregister and clean up all active timers
+ * @event: sd_event loop that timers were registered with
+ *
+ * Unregisters all timer event sources from the event loop,
+ * frees associated TimerContext structures, and cleans up
+ * internal state. Call during shutdown before event_loop_shutdown().
+ *
+ * Returns 0 on success, negative errno on failure.
+ */
+int timerd_stop(sd_event *event);
 
 extern int parse_sec_to_int(const char *str, int *out);
 
