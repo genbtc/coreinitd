@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MAX_SERVICES 64
 static ServiceEntry service_table[MAX_SERVICES];
@@ -64,4 +65,57 @@ void service_manager_status(void) {
         }
         printf("%s\tPID %d\t%s\n", service_table[i].unit->name, service_table[i].pid, state);
     }
+}
+
+/**
+ * service_manager_stop_all() - Gracefully stop all running services
+ *
+ * Three-phase shutdown:
+ * 1. Send SIGTERM to all services (graceful shutdown request)
+ * 2. Wait 1 second for services to clean up
+ * 3. Send SIGKILL to any remaining services (force terminate)
+ * 4. Reap all child processes
+ *
+ * Returns 0 on success, negative on error.
+ */
+void service_manager_stop_all(void) {
+    if (service_count == 0) {
+        fprintf(stderr, "[service_manager] No services to stop\n");
+        return;
+    }
+
+    fprintf(stderr, "[service_manager] Stopping %zu service(s)...\n", service_count);
+
+    // Phase 1: Send SIGTERM to all services (graceful shutdown)
+    for (size_t i = 0; i < service_count; i++) {
+        if (service_table[i].pid > 0) {
+            fprintf(stderr, "[service_manager] Sending SIGTERM to %s (PID %d)\n",
+                    service_table[i].unit->name, service_table[i].pid);
+            kill(service_table[i].pid, SIGTERM);
+        }
+    }
+
+    // Phase 2: Wait 1 second for graceful shutdown
+    sleep(1);
+
+    // Phase 3: Send SIGKILL to any stragglers
+    for (size_t i = 0; i < service_count; i++) {
+        if (service_table[i].pid > 0) {
+            // Check if process still exists by sending signal 0 (no-op)
+            if (kill(service_table[i].pid, 0) == 0) {
+                fprintf(stderr, "[service_manager] Sending SIGKILL to %s (PID %d)\n",
+                        service_table[i].unit->name, service_table[i].pid);
+                kill(service_table[i].pid, SIGKILL);
+            }
+        }
+    }
+
+    // Phase 4: Reap all children
+    pid_t pid;
+    int status;
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        fprintf(stderr, "[service_manager] Reaped child PID %d\n", pid);
+    }
+
+    fprintf(stderr, "[service_manager] All services stopped\n");
 }
