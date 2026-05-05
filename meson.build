@@ -22,7 +22,7 @@ coreinitd_src = files(
   'src/coreinitd/unit_loader.c',
   'src/coreinitd/socket_activation.c',
   'src/coreinitd/service_manager.c',
-  'src/coreinitd/timerd.c'
+  'src/coreinitd/timerd.c',
   'src/helpers/parse_sec-to-int.c'
 )
 
