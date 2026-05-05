@@ -6,12 +6,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <systemd/sd-event.h>
 #include <sys/types.h>
+#include <systemd/sd-event.h>
+#include "unit_loader.h"
 
 #define UNIT_DIR "./etc/units"
-
-#include "unit_loader.h"
 #define MAX_UNITS 64
 static Unit loaded_units[MAX_UNITS];
 static size_t unit_count = 0;
@@ -70,7 +69,8 @@ int main(void) {
     if (event_loop_init() < 0)
         return 1;
 
-    load_all_units();           // Parses and loads .service, .socket, .timer files
+    // Parses and loads .service, .socket, .timer files
+    load_all_units();
 
     // Start all valid services
     for (size_t i = 0; i < unit_count; i++) {
@@ -86,6 +86,8 @@ int main(void) {
     timerd_start(event, loaded_units, unit_count);
 
     int ret = event_loop_run();
+    
+    //Stop, Teardown
     socket_activation_stop();
     event_loop_shutdown();
     return ret;

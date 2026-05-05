@@ -1,5 +1,5 @@
 project('coreinitd', 'c',
-  version : '0.11',
+  version : '0.12',
   default_options : ['warning_level=2', 'c_std=gnu11'])
 
 # Prefer elogind first if present, else fallback to systemd
@@ -23,6 +23,7 @@ coreinitd_src = files(
   'src/coreinitd/socket_activation.c',
   'src/coreinitd/service_manager.c',
   'src/coreinitd/timerd.c'
+  'src/helpers/parse_sec-to-int.c'
 )
 
 # Helper binaries (each has its own main())

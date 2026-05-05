@@ -8,18 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <systemd/sd-event.h>
-#include "unit_loader.h"
-
-typedef struct {
-    int fd;
-    Unit *unit;
-    sd_event_source *event_source;
-} SocketActivation;
-
-#define MAX_SOCKETS 32
-static SocketActivation sockets[MAX_SOCKETS];
-static size_t socket_count = 0;
+#include "socket_activation.h"
 
 static int make_socket_nonblocking(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);

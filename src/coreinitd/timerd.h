@@ -6,6 +6,19 @@
 #include "unit_loader.h"
 
 /**
+ * TimerContext - Metadata for a scheduled timer
+ * Stored in userdata to track which timer fired and its recurrence settings
+ */
+typedef struct {
+    Unit *timer_unit;
+    int boot_sec;        // OnBootSec interval (seconds)
+    int active_sec;      // OnUnitActiveSec interval (seconds)
+    int has_boot;        // Flag: has valid OnBootSec
+    int has_active;      // Flag: has valid OnUnitActiveSec
+    int fired_once;      // Flag: timer has fired at least once
+} TimerContext;
+
+/**
  * timerd_start() - Initialize and schedule all .timer units
  * @event: sd_event loop to attach timer sources to
  * @units: array of loaded unit structures
@@ -19,5 +32,8 @@
  * Returns 0 on success, negative errno on failure.
  */
 int timerd_start(sd_event *event, Unit *units, size_t count);
+//#TODO: timerd_stop //add a method to unregister 
+
+extern int parse_sec_to_int(const char *str, int *out);
 
 #endif

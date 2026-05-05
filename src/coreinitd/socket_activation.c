@@ -11,16 +11,6 @@
 #include "service_manager.h"
 #include "socket_activation.h"
 
-typedef struct {
-    int fd;
-    Unit *unit;
-    sd_event_source *event_source;
-} SocketActivation;
-
-#define MAX_SOCKETS 32
-static SocketActivation sockets[MAX_SOCKETS];
-static size_t socket_count = 0;
-
 static Unit *find_matching_service(const Unit *socket_unit, Unit *units, size_t count) {
     char base[128];
     strncpy(base, socket_unit->name, sizeof(base));
