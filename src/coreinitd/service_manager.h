@@ -20,5 +20,6 @@ typedef struct {
 int service_manager_start(Unit *unit);
 void service_manager_reap(pid_t pid);
 void service_manager_status(void);
+void service_manager_stop_all(void);
 
 #endif
