@@ -1,0 +1,11 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --help
+[coreinitd-main] Starting...
+[coreinitd] Loaded socket unit: example.socket → 
+[coreinitd] Loaded timer unit: example.timer → 
+[coreinitd] Loaded service unit: example.service → build/example-daemon
+[service_manager] Started ./etc/units/example.service (PID 19201)
+Failed to add socket event source: Invalid argument
+[timerd] Invalid arguments to timerd_start
+[coreinitd-event] Starting event loop...
+[coreinitd-event] Event loop error: Invalid argument
+[coreinitd-main] Stopped All & Shutdown.

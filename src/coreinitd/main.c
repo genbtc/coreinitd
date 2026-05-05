@@ -66,8 +66,9 @@ void load_all_units(void) {
 int main(void) {
     fprintf(stderr, "[coreinitd-main] Starting...\n");
 
-    if (event_loop_init() < 0)
-        return 1;
+//TODO: coreinitd-event] SIGCHLD already has a handler!
+//    if (event_loop_init() < 0)
+//        return 1;
 
     // Parses and loads .service, .socket, .timer files
     load_all_units();
