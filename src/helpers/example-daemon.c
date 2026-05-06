@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
              getpid(), verbose, foreground);
     log_message("INFO", startup_msg);
     if (config_file[0] != '\0') {
-        char config_msg[256];
+        char config_msg[276];
         snprintf(config_msg, sizeof(config_msg), "Using config file: %s", config_file);
         log_message("INFO", config_msg);
     }
