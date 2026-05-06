@@ -109,8 +109,8 @@ int main() {
     }
 
     if (timer.type != UNIT_TIMER ||
-        expect_str("OnBootSec", timer.on_boot_sec, "10s") ||
-        expect_str("OnUnitActiveSec", timer.on_active_sec, "1h") ||
+        expect_str("OnBootSec", timer.on_boot_sec, "2s") ||
+        expect_str("OnUnitActiveSec", timer.on_active_sec, "5s") ||
         expect_str("Unit", timer.timer_unit, "example.service")) {
         return 1;
     }

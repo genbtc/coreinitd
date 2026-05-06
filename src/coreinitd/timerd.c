@@ -24,6 +24,13 @@ static const char *unit_basename(const char *name) {
 static sd_event_source *timer_sources[MAX_TIMERS];
 static TimerContext *timer_contexts[MAX_TIMERS];
 static size_t timer_count_total = 0;
+static int exit_after_fires = 0;
+static int observed_fires = 0;
+
+void timerd_exit_after_fires(int fires) {
+    exit_after_fires = fires > 0 ? fires : 0;
+    observed_fires = 0;
+}
 
 /**
  * find_service_for_timer() - Locate the service unit triggered by a timer
@@ -90,10 +97,12 @@ static Unit *find_service_for_timer(Unit *timer_unit, Unit *units, size_t count)
  * Returns 0 to keep the timer active (for recurrent timers), or exits callback.
  */
 static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
+    (void)usec;
     TimerContext *ctx = (TimerContext *)userdata;
     Unit *timer_unit = ctx->timer_unit;
 
-    fprintf(stderr, "[timerd] Timer fired: %s\n", timer_unit->name);
+    observed_fires++;
+    fprintf(stderr, "[timerd] Timer fired: %s (fire %d)\n", timer_unit->name, observed_fires);
 
     // Find and trigger associated service
     Unit *service = find_service_for_timer(timer_unit, all_units, unit_total);
@@ -124,14 +133,29 @@ static int on_timer_event(sd_event_source *s, uint64_t usec, void *userdata) {
             return -1;
         }
 
+        r = sd_event_source_set_enabled(s, SD_EVENT_ONESHOT);
+        if (r < 0) {
+            fprintf(stderr, "[timerd] Failed to re-enable timer %s: %s\n",
+                    timer_unit->name, strerror(-r));
+            return -1;
+        }
+
         fprintf(stderr, "[timerd] Rescheduled %s for %" PRIu64 " usec from now\n",
                 timer_unit->name, next_time - now);
+        if (exit_after_fires > 0 && observed_fires >= exit_after_fires) {
+            fprintf(stderr, "[timerd] Observed %d timer fire(s), leaving event loop\n", observed_fires);
+            return sd_event_exit(sd_event_source_get_event(s), 0);
+        }
         return 0;  // Keep timer active for next interval
     }
 
     // No recurrence via OnUnitActiveSec; timer runs once and stops
     fprintf(stderr, "[timerd] Timer %s will not recur (no OnUnitActiveSec)\n",
             timer_unit->name);
+    if (exit_after_fires > 0 && observed_fires >= exit_after_fires) {
+        fprintf(stderr, "[timerd] Observed %d timer fire(s), leaving event loop\n", observed_fires);
+        return sd_event_exit(sd_event_source_get_event(s), 0);
+    }
     return 0;
 }
 
@@ -279,6 +303,8 @@ int timerd_stop(sd_event *event) {
     }
 
     timer_count_total = 0;
+    exit_after_fires = 0;
+    observed_fires = 0;
     all_units = NULL;
     unit_total = 0;
 

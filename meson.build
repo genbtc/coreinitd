@@ -80,3 +80,17 @@ test('ipv4-socket-activation',
   workdir: meson.project_source_root(),
   timeout: 20,
   depends: coreinitd)
+
+test('timer-recurrence',
+  find_program('tests/test-timer-recurrence.sh'),
+  env: {'COREINITD_BIN': coreinitd.full_path()},
+  workdir: meson.project_source_root(),
+  timeout: 10,
+  depends: coreinitd)
+
+test('cli-drop-in',
+  find_program('tests/test-cli-drop-in.sh'),
+  env: {'COREINITD_BIN': coreinitd.full_path()},
+  workdir: meson.project_source_root(),
+  timeout: 10,
+  depends: coreinitd)
