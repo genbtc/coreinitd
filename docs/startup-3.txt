@@ -1,0 +1,41 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --help
+[coreinitd-main] Starting...
+[coreinitd-event] Created default sd-event loop
+[coreinitd-event] SIGCHLD handler registered
+[coreinitd-event] SIGINT handler registered
+[coreinitd-event] SIGTERM handler registered
+[coreinitd] Loaded socket unit: example.socket → 
+[coreinitd] Loaded timer unit: example.timer → 
+[coreinitd] Loaded service unit: example.service → build/example-daemon
+[coreinitd] Deferring socket-activated service ./etc/units/example.service (Socket=example.socket)
+[socket_activation] Scanning 3 loaded unit(s) for UNIX socket activation
+[socket_activation] Preparing socket unit ./etc/units/example.socket ListenStream='/tmp/coreinitd-example.sock' Accept=no
+[socket_activation] Listening on UNIX socket /tmp/coreinitd-example.sock (./etc/units/example.socket, fd=5)
+[socket_activation] Initialized 1 UNIX socket listener(s)
+[timerd] Parsed ./etc/units/example.timer: OnBootSec='10s' => 10 sec (valid), OnUnitActiveSec='1h' => 3600 sec (valid), Unit='example.service'
+[timerd] Looking for explicit timer target Unit=example.service for ./etc/units/example.timer
+[timerd] Matched timer ./etc/units/example.timer to explicit service ./etc/units/example.service
+[timerd] Timer ./etc/units/example.timer: OnBootSec=10
+[timerd] Scheduled ./etc/units/example.timer to trigger in 10000000 usec
+[timerd] Initialized 1 timer unit(s)
+[coreinitd-event] Starting event loop...
+[timerd] Timer fired: ./etc/units/example.timer
+[timerd] Looking for explicit timer target Unit=example.service for ./etc/units/example.timer
+[timerd] Matched timer ./etc/units/example.timer to explicit service ./etc/units/example.service
+[timerd] Triggering service ./etc/units/example.service from timer ./etc/units/example.timer
+[service_manager] Started ./etc/units/example.service (PID 25040)
+[timerd] Rescheduled ./etc/units/example.timer for 3600000000 usec from now
+^C[coreinitd-event] Received signal 2, leaving event loop
+[coreinitd-event] Event loop stopped with status 0
+[service_manager] Stopping 1 service(s)...
+[service_manager] Sending SIGTERM to ./etc/units/example.service (PID 25040)
+[service_manager] Sending SIGKILL to ./etc/units/example.service (PID 25040)
+[service_manager] All services stopped
+[timerd] Stopping 1 timer(s)...
+[timerd] Unregistering timer source 0
+[timerd] Freeing timer context 0
+[timerd] All timers stopped and cleaned up
+[socket_activation] Stopping 1 socket listener(s)
+[socket_activation] Removed socket path /tmp/coreinitd-example.sock
+[coreinitd-event] Event loop released
+[coreinitd-main] Stopped All & Shutdown.
