@@ -45,6 +45,16 @@ int timerd_start(sd_event *event, Unit *units, size_t count);
  */
 int timerd_stop(sd_event *event);
 
+/**
+ * timerd_exit_after_fires() - Test helper for bounded daemon runs
+ * @fires: number of timer callbacks after which the event loop exits
+ *
+ * A value greater than zero asks timerd to call sd_event_exit() after that
+ * many timer callbacks. This is useful for CLI smoke tests of recurring
+ * OnUnitActiveSec timers without sending an external signal.
+ */
+void timerd_exit_after_fires(int fires);
+
 extern int parse_sec_to_int(const char *str, int *out);
 
 #endif

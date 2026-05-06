@@ -1,4 +1,4 @@
 [Timer]
-OnBootSec=10s
-OnUnitActiveSec=1h
+OnBootSec=2s
+OnUnitActiveSec=5s
 Unit=example.service
