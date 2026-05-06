@@ -1,0 +1,91 @@
+# cd systemd-user # cat * | sort -u
+#AmbientCapabilities=CAP_CHOWN CAP_FOWNER
+After=graphical-session.target
+BusName=ca.desrt.dconf
+BusName=org.a11y.Bus
+BusName=org.freedesktop.Notifications
+BusName=org.gtk.vfs.Daemon
+BusName=org.gtk.vfs.MTPVolumeMonitor
+BusName=org.gtk.vfs.Metadata
+BusName=org.xfce.FileManager
+BusName=org.xfce.Xfconf
+Description=Accessibility services bus
+Description=Dunst notification daemon
+Description=Emacs text editor
+Description=GnuPG cryptographic agent (ssh-agent emulation)
+Description=GnuPG cryptographic agent and passphrase cache
+Description=GnuPG cryptographic agent and passphrase cache (access for web browsers)
+Description=GnuPG cryptographic agent and passphrase cache (restricted)
+Description=GnuPG network certificate management daemon
+Description=Syncthing - Open Source Continuous File Synchronization
+Description=Thunar file manager
+Description=User preferences database
+Description=Virtual filesystem metadata service
+Description=Virtual filesystem service
+Description=Virtual filesystem service - Media Transfer Protocol monitor
+Description=XFCE notifications service
+Description=Xfce configuration service
+DirectoryMode=0700
+Documentation=info:emacs man:emacs(1) https://gnu.org/software/emacs/
+Documentation=man:Thunar(1)
+Documentation=man:dconf-service(1)
+Documentation=man:dirmngr(8)
+Documentation=man:dunst(1)
+Documentation=man:gpg-agent(1)
+Documentation=man:gpg-agent(1) man:ssh-add(1) man:ssh-agent(1) man:ssh(1)
+Documentation=man:syncthing(1)
+Environment="STLOGFORMATLEVELSTRING=false"
+Environment="STLOGFORMATLEVELSYSLOG=true"
+Environment="STLOGFORMATTIMESTAMP="
+ExecReload=/usr/bin/dunstctl reload
+ExecReload=/usr/bin/gpgconf --reload dirmngr
+ExecReload=/usr/bin/gpgconf --reload gpg-agent
+ExecStart=/usr/bin/Thunar --daemon
+ExecStart=/usr/bin/dirmngr --deprecated-supervised
+ExecStart=/usr/bin/dunst
+ExecStart=/usr/bin/emacs --fg-daemon
+ExecStart=/usr/bin/gpg-agent --deprecated-supervised
+ExecStart=/usr/bin/syncthing serve --no-browser --no-restart
+ExecStart=/usr/lib64/xfce4/notifyd/xfce4-notifyd
+ExecStart=/usr/lib64/xfce4/xfconf/xfconfd
+ExecStart=/usr/libexec/at-spi-bus-launcher
+ExecStart=/usr/libexec/dconf-service
+ExecStart=/usr/libexec/gvfs-mtp-volume-monitor
+ExecStart=/usr/libexec/gvfsd
+ExecStart=/usr/libexec/gvfsd-metadata
+ExecStartPost=-/bin/systemctl --user set-environment SSH_AUTH_SOCK=%t/gnupg/S.gpg-agent.ssh
+FileDescriptorName=browser
+FileDescriptorName=extra
+FileDescriptorName=ssh
+FileDescriptorName=std
+KillMode=process[Unit]
+ListenStream=%t/gnupg/S.dirmngr
+ListenStream=%t/gnupg/S.gpg-agent
+ListenStream=%t/gnupg/S.gpg-agent.browser
+ListenStream=%t/gnupg/S.gpg-agent.extra
+ListenStream=%t/gnupg/S.gpg-agent.ssh
+MemoryDenyWriteExecute=true
+NoNewPrivileges=true
+PartOf=graphical-session.target
+Requires=dirmngr.socket
+Requires=gpg-agent.socket
+Restart=on-failure
+RestartForceExitStatus=3 4
+RestartSec=1
+Service=gpg-agent.service
+Slice=session.slice
+SocketMode=0600
+StartLimitBurst=4
+StartLimitIntervalSec=60
+SuccessExitStatus=15
+SuccessExitStatus=3 4
+SystemCallArchitectures=native
+TimeoutStopSec=5
+Type=dbus
+Type=notify
+WantedBy=default.target
+WantedBy=sockets.target
+[Install]
+[Service]
+[Socket]
+[Unit]
