@@ -84,10 +84,13 @@ static void parse_service_verb(Unit *out, const char *key, const char *val) {
         append_value(&out->exec_start_post, val);
     else if (strcasecmp(key, "KillMode") == 0)
         copy_value(out->kill_mode, sizeof(out->kill_mode), val);
-    else if (strcasecmp(key, "MemoryDenyWriteExecute") == 0)
+    else if (strcasecmp(key, "MemoryDenyWriteExecute") == 0) {
         out->memory_deny_write_execute = parse_bool(val);
-    else if (strcasecmp(key, "NoNewPrivileges") == 0)
+        out->memory_deny_write_execute_set = 1;
+    } else if (strcasecmp(key, "NoNewPrivileges") == 0) {
         out->no_new_privileges = parse_bool(val);
+        out->no_new_privileges_set = 1;
+    }
     else if (strcasecmp(key, "Restart") == 0)
         copy_value(out->restart, sizeof(out->restart), val);
     else if (strcasecmp(key, "RestartForceExitStatus") == 0)
@@ -110,13 +113,17 @@ static void parse_service_verb(Unit *out, const char *key, const char *val) {
         copy_value(out->type_name, sizeof(out->type_name), val);
     else if (strcasecmp(key, "NotifyAccess") == 0)
         copy_value(out->notify_access, sizeof(out->notify_access), val);
-    else if (strcasecmp(key, "Sandbox") == 0)
+    else if (strcasecmp(key, "Sandbox") == 0) {
         out->sandbox = parse_bool(val);
+        out->sandbox_set = 1;
+    }
 }
 
 static void parse_socket_verb(Unit *out, const char *key, const char *val) {
-    if (strcasecmp(key, "Accept") == 0)
+    if (strcasecmp(key, "Accept") == 0) {
         out->accept = parse_bool(val);
+        out->accept_set = 1;
+    }
     else if (strcasecmp(key, "DirectoryMode") == 0)
         copy_value(out->directory_mode, sizeof(out->directory_mode), val);
     else if (strcasecmp(key, "FileDescriptorName") == 0)

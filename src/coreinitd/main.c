@@ -171,7 +171,35 @@ static void print_unit_list(void) {
 
 static void print_string_list(const char *label, const UnitStringList *list) {
     for (size_t i = 0; i < list->count; i++)
-        printf("  %s[%zu]=%s\n", label, i, list->values[i]);
+        printf("%s[%zu]=%s\n", label, i, list->values[i]);
+}
+
+static void print_string_field(const char *label, const char *value) {
+    if (value[0])
+        printf("%s=%s\n", label, value);
+}
+
+static void print_bool_field(const char *label, int is_set, int value) {
+    if (is_set)
+        printf("%s=%s\n", label, value ? "true" : "false");
+}
+
+static const char *unit_activation_target(const Unit *unit, char *buf, size_t buf_len) {
+    if (unit->type == UNIT_SERVICE) {
+        if (strcasecmp(unit->type_name, "dbus") == 0 && unit->bus_name[0]) {
+            snprintf(buf, buf_len, "dbus://%s", unit->bus_name);
+            return buf;
+        }
+        return unit->exec_start;
+    }
+
+    if (unit->type == UNIT_SOCKET)
+        return unit->listen_stream;
+
+    if (unit->type == UNIT_TIMER)
+        return unit->timer_unit;
+
+    return "";
 }
 
 static int print_unit_details(const char *needle) {
@@ -181,27 +209,59 @@ static int print_unit_details(const char *needle) {
 
         printf("Name=%s\n", u->name);
         printf("Type=%s\n", unit_type_name(u->type));
-        printf("Description=%s\n", u->description);
+
+        puts("[Unit]");
+        print_string_field("Description", u->description);
         print_string_list("After", &u->after);
         print_string_list("Documentation", &u->documentation);
+        print_string_list("PartOf", &u->part_of);
         print_string_list("Requires", &u->requires);
+        if (u->start_limit_burst > 0)
+            printf("StartLimitBurst=%d\n", u->start_limit_burst);
+        print_string_field("StartLimitIntervalSec", u->start_limit_interval_sec);
 
         if (u->type == UNIT_SERVICE) {
-            printf("ExecStart=%s\n", u->exec_start);
-            printf("TypeName=%s\n", u->type_name);
-            printf("NotifyAccess=%s\n", u->notify_access);
-            printf("Socket=%s\n", u->socket_unit);
-            printf("Sandbox=%s\n", u->sandbox ? "true" : "false");
+            puts("[Service]");
+            print_string_list("AmbientCapabilities", &u->ambient_capabilities);
+            print_string_field("BusName", u->bus_name);
+            print_string_list("Environment", &u->environment);
+            print_string_field("ExecReload", u->exec_reload);
+            print_string_field("ExecStart", u->exec_start);
+            print_string_list("ExecStartPost", &u->exec_start_post);
+            print_string_field("KillMode", u->kill_mode);
+            print_bool_field("MemoryDenyWriteExecute", u->memory_deny_write_execute_set, u->memory_deny_write_execute);
+            print_bool_field("NoNewPrivileges", u->no_new_privileges_set, u->no_new_privileges);
+            print_string_field("NotifyAccess", u->notify_access);
+            print_string_field("Restart", u->restart);
+            print_string_list("RestartForceExitStatus", &u->restart_force_exit_status);
+            print_string_field("RestartSec", u->restart_sec);
+            print_bool_field("Sandbox", u->sandbox_set, u->sandbox);
+            print_string_field("Slice", u->slice);
+            print_string_field("Socket", u->socket_unit);
+            print_string_list("SuccessExitStatus", &u->success_exit_status);
+            print_string_field("SystemCallArchitectures", u->system_call_architectures);
+            print_string_field("TimeoutStopSec", u->timeout_stop_sec);
+            print_string_field("TypeName", u->type_name);
         } else if (u->type == UNIT_SOCKET) {
-            printf("ListenStream=%s\n", u->listen_stream);
-            printf("Accept=%s\n", u->accept ? "yes" : "no");
-            printf("Service=%s\n", u->service);
-            printf("FileDescriptorName=%s\n", u->file_descriptor_name);
+            puts("[Socket]");
+            print_bool_field("Accept", u->accept_set, u->accept);
+            print_string_field("DirectoryMode", u->directory_mode);
+            print_string_field("FileDescriptorName", u->file_descriptor_name);
+            print_string_field("ListenStream", u->listen_stream);
+            print_string_field("Service", u->service);
+            print_string_field("SocketMode", u->socket_mode);
         } else if (u->type == UNIT_TIMER) {
-            printf("OnBootSec=%s\n", u->on_boot_sec);
-            printf("OnUnitActiveSec=%s\n", u->on_active_sec);
-            printf("Unit=%s\n", u->timer_unit);
+            puts("[Timer]");
+            print_string_field("OnBootSec", u->on_boot_sec);
+            print_string_field("OnUnitActiveSec", u->on_active_sec);
+            print_string_field("Unit", u->timer_unit);
         }
+
+        if (u->wanted_by.count > 0) {
+            puts("[Install]");
+            print_string_list("WantedBy", &u->wanted_by);
+        }
+
         return 0;
     }
 
@@ -271,8 +331,10 @@ static int load_units_from_dir(const char *dir, const char *label) {
                 case UNIT_TIMER: type_str = "timer"; break;
                 default: break;
             }
+            char target[256];
             fprintf(stderr, "[coreinitd] Loaded %s %s unit: %s → %s\n",
-                label, type_str, ent->d_name, loaded_units[unit_count].exec_start);
+                label, type_str, ent->d_name,
+                unit_activation_target(&loaded_units[unit_count], target, sizeof(target)));
             unit_count++;
         } else {
             fprintf(stderr, "[coreinitd] Failed to load %s unit %s\n", label, ent->d_name);
