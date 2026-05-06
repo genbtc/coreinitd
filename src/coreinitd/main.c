@@ -327,8 +327,8 @@ static int load_units_from_dir(const char *dir, const char *label) {
         if (load_unit(path, &loaded_units[unit_count]) == 0) {
             switch (loaded_units[unit_count].type) {
                 case UNIT_SERVICE: type_str = "service"; break;
-                case UNIT_SOCKET: type_str = "socket"; break;
-                case UNIT_TIMER: type_str = "timer"; break;
+                case UNIT_SOCKET: type_str = "socket "; break;
+                case UNIT_TIMER: type_str = "timer  "; break;
                 default: break;
             }
             char target[256];

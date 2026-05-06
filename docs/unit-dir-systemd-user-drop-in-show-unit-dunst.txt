@@ -1,0 +1,37 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --drop-in systemd-user --show-unit dunst.service
+[coreinitd-main] Starting...
+[coreinitd-main] Config: UNIT_DIR=./etc/units MAX_UNITS=64 MAX_SERVICES=64 MAX_SOCKETS=64
+[coreinitd] Loaded main socket  unit: example.socket → /tmp/coreinitd-example.sock
+[coreinitd] Loaded main timer   unit: example.timer → example.service
+[coreinitd] Loaded main service unit: example.service → build/example-daemon
+[coreinitd] Loaded drop-in service unit: emacs.service → /usr/bin/emacs --fg-daemon
+[coreinitd] Loaded drop-in service unit: gpg-agent.service → /usr/bin/gpg-agent --deprecated-supervised
+[coreinitd] Loaded drop-in socket  unit: gpg-agent-browser.socket → %t/gnupg/S.gpg-agent.browser
+[coreinitd] Loaded drop-in service unit: syncthing.service → /usr/bin/syncthing serve --no-browser --no-restart
+[coreinitd] Loaded drop-in service unit: gvfs-daemon.service → dbus://org.gtk.vfs.Daemon
+[coreinitd] Loaded drop-in service unit: at-spi-dbus-bus.service → dbus://org.a11y.Bus
+[coreinitd] Loaded drop-in socket  unit: dirmngr.socket → %t/gnupg/S.dirmngr
+[coreinitd] Loaded drop-in service unit: xfconfd.service → dbus://org.xfce.Xfconf
+[coreinitd] Loaded drop-in service unit: thunar.service → dbus://org.xfce.FileManager
+[coreinitd] Loaded drop-in service unit: dconf.service → dbus://ca.desrt.dconf
+[coreinitd] Loaded drop-in service unit: gvfs-metadata.service → dbus://org.gtk.vfs.Metadata
+[coreinitd] Loaded drop-in service unit: dirmngr.service → /usr/bin/dirmngr --deprecated-supervised
+[coreinitd] Loaded drop-in socket  unit: gpg-agent-extra.socket → %t/gnupg/S.gpg-agent.extra
+[coreinitd] Loaded drop-in service unit: gvfs-mtp-volume-monitor.service → dbus://org.gtk.vfs.MTPVolumeMonitor
+[coreinitd] Loaded drop-in socket  unit: gpg-agent-ssh.socket → %t/gnupg/S.gpg-agent.ssh
+[coreinitd] Loaded drop-in socket  unit: gpg-agent.socket → %t/gnupg/S.gpg-agent
+[coreinitd] Loaded drop-in service unit: xfce4-notifyd.service → dbus://org.freedesktop.Notifications
+[coreinitd] Loaded drop-in service unit: dunst.service → dbus://org.freedesktop.Notifications
+Name=systemd-user/dunst.service
+Type=service
+[Unit]
+Description=Dunst notification daemon
+After[0]=graphical-session.target
+Documentation[0]=man:dunst(1)
+PartOf[0]=graphical-session.target
+[Service]
+BusName=org.freedesktop.Notifications
+ExecReload=/usr/bin/dunstctl reload
+ExecStart=/usr/bin/dunst
+Slice=session.slice
+TypeName=dbus
