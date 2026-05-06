@@ -71,4 +71,12 @@ test('unix-socket-activation',
   find_program('tests/test-unix-socket-activation.sh'),
   env: {'COREINITD_BIN': coreinitd.full_path()},
   workdir: meson.project_source_root(),
-  timeout: 20)
+  timeout: 20,
+  depends: coreinitd)
+
+test('ipv4-socket-activation',
+  find_program('tests/test-ipv4-socket-activation.sh'),
+  env: {'COREINITD_BIN': coreinitd.full_path()},
+  workdir: meson.project_source_root(),
+  timeout: 20,
+  depends: coreinitd)

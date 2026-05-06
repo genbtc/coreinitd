@@ -20,9 +20,9 @@
 | `event_loop.c` | ✅ Working | Wraps the global `sd-event` loop and handles `SIGCHLD`, `SIGINT`, and `SIGTERM`. |
 | `unit_loader.c` | ✅ Working | Parses `.service`, `.socket`, and `.timer` unit files and many common systemd-style verbs into `Unit` structs. |
 | `service_manager.c` | ✅ Basic | Starts services with `/bin/sh -c`, tracks PIDs in a fixed table capped by runtime config, and stops children during shutdown. |
-| `socket_activation.c` | ✅ Basic | Centralized socket activation file; handles UNIX stream sockets and IPv4 `host:port` stream sockets. The old `socket_stream.c` is now duplicate boilerplate and should be deleted once downstream references are removed. |
+| `socket_activation.c` | ✅ Basic | Centralized socket activation file; handles UNIX stream sockets and IPv4 `host:port` stream sockets. |
 | `timerd.c` | ✅ Basic | Registers timer events in the main event loop and triggers matching services. |
-| Meson tests | ✅ Working in supported environments | `meson test` runs parser tests and the UNIX socket activation smoke test when build dependencies are available. |
+| Meson tests | ✅ Working in supported environments | `meson test` runs parser tests and the UNIX/IPv4 socket activation smoke tests when build dependencies are available. |
 
 ## Unfinished / Planned Work
 
@@ -63,11 +63,9 @@ Current behavior:
 
 Next socket milestones:
 
-1. Delete or stop carrying `src/coreinitd/socket_stream.c` after confirming nothing includes or builds it.
-2. Implement `LISTEN_FDS`/`LISTEN_PID` descriptor passing.
-3. Preserve accepted client FDs long enough for activated services to consume them.
-4. Add `Accept=yes` semantics.
-5. Add tests for IPv4 socket activation in addition to the existing UNIX smoke test.
+1. Implement `LISTEN_FDS`/`LISTEN_PID` descriptor passing.
+2. Preserve accepted client FDs long enough for activated services to consume them.
+3. Add `Accept=yes` semantics.
 
 ## Build and Test Plan
 
@@ -85,11 +83,11 @@ Current Meson test coverage:
 - `unit-parsing`: `.service`, `.socket`, `.timer`, and verb coverage parsing.
 - `config-parsing`: runtime config parser.
 - `unix-socket-activation`: daemon smoke test using `/tmp/coreinitd-example.sock`.
+- `ipv4-socket-activation`: daemon smoke test using a temporary `.socket` unit on `127.0.0.1:9999`.
 
 ## Suggested Next Steps
 
-1. Remove `src/coreinitd/socket_stream.c` after this consolidation lands.
-2. Replace static service/socket/unit arrays with dynamically allocated tables so runtime limits are not capped at compile-time capacities.
-3. Implement descriptor passing for socket-activated services.
-4. Enforce unit dependency ordering.
-5. Expand Meson tests for IPv4 sockets and timer-triggered services.
+1. Replace static service/socket/unit arrays with dynamically allocated tables so runtime limits are not capped at compile-time capacities.
+2. Implement descriptor passing for socket-activated services.
+3. Enforce unit dependency ordering.
+4. Expand Meson tests for timer-triggered services.

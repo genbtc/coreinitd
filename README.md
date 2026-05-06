@@ -7,7 +7,7 @@
 ### Finished / working now
 
 - Meson builds the main `coreinitd` daemon and helper binaries.
-- `meson test` knows about the C parser tests and the UNIX socket activation smoke test.
+- `meson test` knows about the C parser tests and the UNIX/IPv4 socket activation smoke tests.
 - `.service`, `.socket`, and `.timer` unit files can be loaded from a configured unit directory.
 - Runtime configuration is read from `etc/coreinitd.conf` by default, with `COREINITD_CONFIG=/path/to/file` available as an override.
 - The unit directory and runtime limits (`unit_dir`/`UNIT_DIR`, `max_units`, `max_services`, `max_sockets`) are configurable in a simple INI/TOML-style `key = value` format.
@@ -63,7 +63,7 @@ meson compile -C build
 meson test -C build
 ```
 
-The smoke test starts the built daemon, connects to the example UNIX socket at `/tmp/coreinitd-example.sock`, and then terminates the daemon.
+The socket activation smoke tests start the built daemon, connect to the example UNIX socket at `/tmp/coreinitd-example.sock` and a temporary IPv4 unit on `127.0.0.1:9999`, and then terminate the daemon.
 
 ## License
 
