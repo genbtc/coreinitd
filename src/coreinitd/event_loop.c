@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <systemd/sd-event.h>
 #include "event_loop.h"
+#include "service_manager.h"
 
 // Global event loop pointer - accessible to all modules
 sd_event *event = NULL;
@@ -26,7 +27,7 @@ static int on_sigchld(sd_event_source *s, const struct signalfd_siginfo *si, voi
     int status;
 
     while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        fprintf(stderr, "[coreinitd-event] Reaped child PID %d\n", pid);
+        service_manager_reap_status(pid, status);
     }
 
     return 0;

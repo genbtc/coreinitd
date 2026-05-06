@@ -88,6 +88,13 @@ test('timer-recurrence',
   timeout: 10,
   depends: coreinitd)
 
+test('service-supervision',
+  find_program('tests/test-service-supervision.sh'),
+  env: {'COREINITD_BIN': coreinitd.full_path()},
+  workdir: meson.project_source_root(),
+  timeout: 10,
+  depends: coreinitd)
+
 test('cli-drop-in',
   find_program('tests/test-cli-drop-in.sh'),
   env: {'COREINITD_BIN': coreinitd.full_path()},
