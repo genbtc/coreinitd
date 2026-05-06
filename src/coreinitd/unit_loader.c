@@ -6,6 +6,7 @@
 #include <ctype.h>
 
 static UnitType infer_unit_type(const char *filename) {
+    if (!filename) return UNIT_UNKNOWN;
     if (strstr(filename, ".service")) return UNIT_SERVICE;
     if (strstr(filename, ".socket"))  return UNIT_SOCKET;
     if (strstr(filename, ".timer"))   return UNIT_TIMER;
@@ -13,6 +14,8 @@ static UnitType infer_unit_type(const char *filename) {
 }
 
 static char *trim(char *s) {
+    if (!s) return NULL;
+
     while (isspace((unsigned char)*s)) s++;
 
     char *end = s + strlen(s);
@@ -23,13 +26,15 @@ static char *trim(char *s) {
 }
 
 static void copy_value(char *dst, size_t dst_len, const char *val) {
-    if (dst_len == 0) return;
+    if (!dst || dst_len == 0) return;
+    if (!val) val = "";
 
     strncpy(dst, val, dst_len - 1);
     dst[dst_len - 1] = '\0';
 }
 
 static void append_value(UnitStringList *list, const char *val) {
+    if (!list || !val) return;
     if (list->count >= UNIT_LIST_MAX) return;
 
     copy_value(list->values[list->count], sizeof(list->values[list->count]), val);
@@ -37,6 +42,8 @@ static void append_value(UnitStringList *list, const char *val) {
 }
 
 static int parse_bool(const char *val) {
+    if (!val) return 0;
+
     return strcasecmp(val, "yes") == 0 ||
            strcasecmp(val, "true") == 0 ||
            strcasecmp(val, "on") == 0 ||
@@ -44,6 +51,7 @@ static int parse_bool(const char *val) {
 }
 
 static UnitSection parse_section(const char *line) {
+    if (!line) return UNIT_SECTION_UNKNOWN;
     if (strcasecmp(line, "[Unit]") == 0) return UNIT_SECTION_UNIT;
     if (strcasecmp(line, "[Service]") == 0) return UNIT_SECTION_SERVICE;
     if (strcasecmp(line, "[Socket]") == 0) return UNIT_SECTION_SOCKET;
@@ -53,6 +61,8 @@ static UnitSection parse_section(const char *line) {
 }
 
 static void parse_unit_verb(Unit *out, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     if (strcasecmp(key, "After") == 0)
         append_value(&out->after, val);
     else if (strcasecmp(key, "Description") == 0)
@@ -70,6 +80,8 @@ static void parse_unit_verb(Unit *out, const char *key, const char *val) {
 }
 
 static void parse_service_verb(Unit *out, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     if (strcasecmp(key, "AmbientCapabilities") == 0)
         append_value(&out->ambient_capabilities, val);
     else if (strcasecmp(key, "BusName") == 0)
@@ -120,6 +132,8 @@ static void parse_service_verb(Unit *out, const char *key, const char *val) {
 }
 
 static void parse_socket_verb(Unit *out, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     if (strcasecmp(key, "Accept") == 0) {
         out->accept = parse_bool(val);
         out->accept_set = 1;
@@ -137,11 +151,15 @@ static void parse_socket_verb(Unit *out, const char *key, const char *val) {
 }
 
 static void parse_install_verb(Unit *out, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     if (strcasecmp(key, "WantedBy") == 0)
         append_value(&out->wanted_by, val);
 }
 
 static void parse_timer_verb(Unit *out, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     if (strcasecmp(key, "OnBootSec") == 0)
         copy_value(out->on_boot_sec, sizeof(out->on_boot_sec), val);
     else if (strcasecmp(key, "OnUnitActiveSec") == 0)
@@ -151,6 +169,8 @@ static void parse_timer_verb(Unit *out, const char *key, const char *val) {
 }
 
 static void parse_verb(Unit *out, UnitSection section, const char *key, const char *val) {
+    if (!out || !key || !val) return;
+
     switch (section) {
         case UNIT_SECTION_UNIT:
             parse_unit_verb(out, key, val);
@@ -180,6 +200,8 @@ static void parse_verb(Unit *out, UnitSection section, const char *key, const ch
 }
 
 int load_unit(const char *path, Unit *out) {
+    if (!path || !out) return -1;
+
     memset(out, 0, sizeof(Unit));
 
     FILE *f = fopen(path, "r");

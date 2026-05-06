@@ -67,6 +67,16 @@ config_parsing_test = executable('test-config-parsing',
 test('config-parsing', config_parsing_test,
   workdir: meson.project_source_root())
 
+service_manager_safety_test = executable('test-service-manager-safety',
+  'tests/test-service-manager-safety.c',
+  'src/coreinitd/service_manager.c',
+  'src/coreinitd/config.c',
+  'src/helpers/parse_sec-to-int.c',
+  dependencies: libsd,
+  include_directories: include_directories('src/coreinitd'))
+
+test('service-manager-safety', service_manager_safety_test)
+
 test('unix-socket-activation',
   find_program('tests/test-unix-socket-activation.sh'),
   env: {'COREINITD_BIN': coreinitd.full_path()},

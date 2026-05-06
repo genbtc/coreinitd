@@ -80,6 +80,11 @@ static int write_socket_verbs_fixture(const char *path) {
 
 int main() {
     Unit service;
+
+    if (load_unit(NULL, &service) == 0 || load_unit("etc/units/example.service", NULL) == 0) {
+        fprintf(stderr, "load_unit should reject NULL inputs\n");
+        return 1;
+    }
     if (load_unit("etc/units/example.service", &service) != 0) {
         fprintf(stderr, "Failed to load example.service\n");
         return 1;
@@ -165,6 +170,30 @@ int main() {
         expect_str("ListenStream", socket_verbs.listen_stream, "%t/verb.sock") ||
         expect_str("Service", socket_verbs.service, "verb.service") ||
         expect_str("SocketMode", socket_verbs.socket_mode, "0600")) {
+        return 1;
+    }
+
+    char long_exec[400];
+    memset(long_exec, 'x', sizeof(long_exec));
+    long_exec[sizeof(long_exec) - 1] = '\0';
+
+    FILE *long_fixture = fopen("build/long-exec.service", "w");
+    if (!long_fixture) {
+        perror("fopen long exec fixture");
+        return 1;
+    }
+    fprintf(long_fixture, "[Service]\nExecStart=%s\n", long_exec);
+    fclose(long_fixture);
+
+    Unit long_unit;
+    if (load_unit("build/long-exec.service", &long_unit) != 0) {
+        fprintf(stderr, "Failed to load long exec fixture\n");
+        return 1;
+    }
+
+    if (long_unit.exec_start[sizeof(long_unit.exec_start) - 1] != '\0' ||
+        strnlen(long_unit.exec_start, sizeof(long_unit.exec_start)) >= sizeof(long_unit.exec_start)) {
+        fprintf(stderr, "ExecStart was not safely NUL-terminated after truncation\n");
         return 1;
     }
 
