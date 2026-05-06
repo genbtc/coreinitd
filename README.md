@@ -12,6 +12,7 @@
 - Runtime configuration is read from `etc/coreinitd.conf` by default, with `COREINITD_CONFIG=/path/to/file` available as an override.
 - The unit directory and runtime limits (`unit_dir`/`UNIT_DIR`, `max_units`, `max_services`, `max_sockets`) are configurable in a simple INI/TOML-style `key = value` format.
 - Non-socket-activated services are started directly by the service manager.
+- Basic service supervision is available: child exits are tracked, `Restart=always|on-failure|on-success`, `RestartSec=`, `SuccessExitStatus=`, `RestartForceExitStatus=`, and `StartLimitBurst=` are honored for simple daemon supervision.
 - Socket activation is centralized in `src/coreinitd/socket_activation.c` and currently handles UNIX stream sockets plus IPv4 `host:port` stream sockets.
 - Timers are registered on the daemon event loop and can trigger matching services.
 
@@ -20,7 +21,7 @@
 - Socket activation still accepts and closes client sockets; full `LISTEN_FDS`/`LISTEN_PID` descriptor passing into activated services is not implemented yet.
 - `Accept=yes` per-connection services are parsed but not implemented.
 - Dependency ordering (`After=`, `Requires=`, `PartOf=`) is parsed but not enforced.
-- Service supervision is minimal; restart policies and full state transitions are future work.
+- Service supervision still needs more OpenRC/systemd parity, including richer `start-stop-daemon`-style matching, pidfiles, user/group changes, readiness protocols, and interval-based start-limit windows.
 - Sandboxing/cgroups/seccomp helpers are present only as early scaffolding.
 - D-Bus/systemd-compatible unit management is not implemented.
 
