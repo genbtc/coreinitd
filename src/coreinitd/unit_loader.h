@@ -48,6 +48,7 @@ typedef struct {
     UnitStringList exec_start_post;
     char notify_access[32];
     int sandbox;
+    int sandbox_set;
     char type_name[32];
     char bus_name[128];
     UnitStringList environment;
@@ -60,12 +61,15 @@ typedef struct {
     char timeout_stop_sec[32];
     char slice[128];
     int memory_deny_write_execute;
+    int memory_deny_write_execute_set;
     int no_new_privileges;
+    int no_new_privileges_set;
     char system_call_architectures[64];
 
     // For Socket units
     char listen_stream[64];	// Unix path, TCP port, etc.
     int accept;		// For Accept=yes|no
+    int accept_set;
     char directory_mode[16];
     char file_descriptor_name[64];
     char service[128];
