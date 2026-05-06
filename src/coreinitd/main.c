@@ -14,7 +14,7 @@
 #include "config.h"
 
 #ifndef PROJECT_VERSION
-#define PROJECT_VERSION "0.12"
+#define PROJECT_VERSION "0.14"
 #endif
 
 static CoreinitdConfig config;

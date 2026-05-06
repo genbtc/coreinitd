@@ -1,5 +1,5 @@
 project('coreinitd', 'c',
-  version : '0.12',
+  version : '0.14',
   default_options : ['warning_level=2', 'c_std=gnu11'])
 
 # Prefer elogind first if present, else fallback to systemd
