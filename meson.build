@@ -20,6 +20,7 @@ coreinitd_src = files(
   'src/coreinitd/main.c',
   'src/coreinitd/event_loop.c',
   'src/coreinitd/unit_loader.c',
+  'src/coreinitd/config.c',
   'src/coreinitd/socket_activation.c',
   'src/coreinitd/service_manager.c',
   'src/coreinitd/timerd.c',
@@ -36,8 +37,38 @@ executable('example-daemon','src/helpers/example-daemon.c',
   install_dir: '/usr/bin')
 
 #Main coreinitd
-executable('coreinitd', coreinitd_src,
+coreinitd = executable('coreinitd', coreinitd_src,
   dependencies: libsd,
   install: true,
   install_dir: '/sbin',
   override_options: ['b_lto=true'])
+
+
+# Unit and smoke tests available through `meson test`.
+parse_sec_test = executable('test-parse-sec',
+  'tests/test-parse-sec.c',
+  'src/helpers/parse_sec-to-int.c')
+
+test('parse-sec', parse_sec_test)
+
+unit_parsing_test = executable('test-unit-parsing',
+  'tests/test-unit-parsing.c',
+  'src/coreinitd/unit_loader.c',
+  include_directories: include_directories('src/coreinitd'))
+
+test('unit-parsing', unit_parsing_test,
+  workdir: meson.project_source_root())
+
+config_parsing_test = executable('test-config-parsing',
+  'tests/test-config-parsing.c',
+  'src/coreinitd/config.c',
+  include_directories: include_directories('src/coreinitd'))
+
+test('config-parsing', config_parsing_test,
+  workdir: meson.project_source_root())
+
+test('unix-socket-activation',
+  find_program('tests/test-unix-socket-activation.sh'),
+  env: {'COREINITD_BIN': coreinitd.full_path()},
+  workdir: meson.project_source_root(),
+  timeout: 20)

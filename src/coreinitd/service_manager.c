@@ -5,9 +5,9 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include "config.h"
 
-#define MAX_SERVICES 64
-static ServiceEntry service_table[MAX_SERVICES];
+static ServiceEntry service_table[COREINITD_MAX_SERVICES_CAPACITY];
 static size_t service_count = 0;
 
 int service_manager_start(Unit *unit) {
@@ -31,8 +31,9 @@ int service_manager_start(Unit *unit) {
         }
     }
 
-    if (service_count >= MAX_SERVICES) {
-        fprintf(stderr, "[service_manager] Service table full\n");
+    const CoreinitdConfig *config = coreinitd_config_get();
+    if (service_count >= config->max_services) {
+        fprintf(stderr, "[service_manager] Service table full (%zu)\n", config->max_services);
         return -1;
     }
 
