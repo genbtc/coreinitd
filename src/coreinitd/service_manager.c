@@ -16,6 +16,21 @@ int service_manager_start(Unit *unit) {
         return -1;
     }
 
+    for (size_t i = 0; i < service_count; i++) {
+        if (service_table[i].unit == unit && service_table[i].pid > 0) {
+            if (kill(service_table[i].pid, 0) == 0) {
+                fprintf(stderr, "[service_manager] Service %s already running (PID %d), not starting duplicate\n",
+                        unit->name, service_table[i].pid);
+                return 0;
+            }
+
+            fprintf(stderr, "[service_manager] Service %s stale PID %d is gone; marking inactive\n",
+                    unit->name, service_table[i].pid);
+            service_table[i].state = SERVICE_INACTIVE;
+            service_table[i].pid = -1;
+        }
+    }
+
     if (service_count >= MAX_SERVICES) {
         fprintf(stderr, "[service_manager] Service table full\n");
         return -1;

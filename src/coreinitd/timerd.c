@@ -5,6 +5,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <time.h>
 #include "timerd.h"
 #include "service_manager.h"
 
@@ -13,6 +14,11 @@
 
 static Unit *all_units = NULL;
 static size_t unit_total = 0;
+
+static const char *unit_basename(const char *name) {
+    const char *slash = strrchr(name, '/');
+    return slash ? slash + 1 : name;
+}
 
 // Track all timer sources for cleanup
 static sd_event_source *timer_sources[MAX_TIMERS];
@@ -32,37 +38,41 @@ static size_t timer_count_total = 0;
 static Unit *find_service_for_timer(Unit *timer_unit, Unit *units, size_t count) {
     if (!timer_unit) return NULL;
 
-    // Try explicit Unit= reference first
+    // Try explicit Unit= reference first. Unit names are stored as paths, so
+    // compare against both the full stored name and its basename.
     if (strlen(timer_unit->timer_unit) > 0) {
+        fprintf(stderr, "[timerd] Looking for explicit timer target Unit=%s for %s\n",
+                timer_unit->timer_unit, timer_unit->name);
         for (size_t i = 0; i < count; i++) {
-            if (units[i].type == UNIT_SERVICE &&
-                strncmp(units[i].name, timer_unit->timer_unit, 
-                       strlen(timer_unit->timer_unit)) == 0) {
+            if (units[i].type != UNIT_SERVICE)
+                continue;
+
+            if (strcmp(units[i].name, timer_unit->timer_unit) == 0 ||
+                strcmp(unit_basename(units[i].name), timer_unit->timer_unit) == 0) {
+                fprintf(stderr, "[timerd] Matched timer %s to explicit service %s\n",
+                        timer_unit->name, units[i].name);
                 return &units[i];
             }
         }
     }
 
     // Fall back to implicit basename matching: "foo.timer" -> "foo.service"
-    char base[128];
-    strncpy(base, timer_unit->name, sizeof(base) - 1);
-    base[sizeof(base) - 1] = '\0';
+    char expected[128];
+    snprintf(expected, sizeof(expected), "%s", unit_basename(timer_unit->name));
 
-    char *ext = strstr(base, ".timer");
+    char *ext = strstr(expected, ".timer");
     if (ext) *ext = '\0';
+    strncat(expected, ".service", sizeof(expected) - strlen(expected) - 1);
+
+    fprintf(stderr, "[timerd] Looking for implicit timer target %s for %s\n",
+            expected, timer_unit->name);
 
     for (size_t i = 0; i < count; i++) {
-        if (units[i].type == UNIT_SERVICE) {
-            char service_base[128];
-            strncpy(service_base, units[i].name, sizeof(service_base) - 1);
-            service_base[sizeof(service_base) - 1] = '\0';
-            
-            char *svc_ext = strstr(service_base, ".service");
-            if (svc_ext) *svc_ext = '\0';
-
-            if (strncmp(service_base, base, strlen(base)) == 0) {
-                return &units[i];
-            }
+        if (units[i].type == UNIT_SERVICE &&
+            strcmp(unit_basename(units[i].name), expected) == 0) {
+            fprintf(stderr, "[timerd] Matched timer %s to implicit service %s\n",
+                    timer_unit->name, units[i].name);
+            return &units[i];
         }
     }
 
@@ -146,8 +156,16 @@ int timerd_start(sd_event *event, Unit *units, size_t count) {
 
         // Parse timer intervals
         int boot_sec = 0, active_sec = 0;
-        int has_boot = (parse_sec_to_int(u->on_boot_sec, &boot_sec) == 0 && boot_sec > 0);
-        int has_active = (parse_sec_to_int(u->on_active_sec, &active_sec) == 0 && active_sec > 0);
+        int boot_parse = parse_sec_to_int(u->on_boot_sec, &boot_sec);
+        int active_parse = parse_sec_to_int(u->on_active_sec, &active_sec);
+        int has_boot = (boot_parse == 0 && boot_sec > 0);
+        int has_active = (active_parse == 0 && active_sec > 0);
+
+        fprintf(stderr, "[timerd] Parsed %s: OnBootSec='%s' => %d sec (%s), "
+                        "OnUnitActiveSec='%s' => %d sec (%s), Unit='%s'\n",
+                u->name, u->on_boot_sec, boot_sec, has_boot ? "valid" : "inactive",
+                u->on_active_sec, active_sec, has_active ? "valid" : "inactive",
+                u->timer_unit);
 
         if (!has_boot && !has_active) {
             fprintf(stderr, "[timerd] Skipping %s (no valid OnBootSec or OnUnitActiveSec)\n",

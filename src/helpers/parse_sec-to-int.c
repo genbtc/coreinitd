@@ -3,15 +3,17 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
 
 /**
  * parse_sec_to_int() - Parse a time string to seconds
- * @str: String like "10", "10s", or empty
+ * @str: String like "10", "10s", "5m", "1h", or empty
  * @out: Pointer to store parsed seconds
  *
- * Parses systemd-style time notation. Accepts plain numbers (interpreted as seconds)
- * or numbers with 's' suffix. Returns 0 on success, -1 on error.
- * Rejects negative values and values > 86400 (24 hours).
+ * Parses a small systemd-style subset. Accepts plain numbers (seconds) or a
+ * single suffix: s/sec/second(s), m/min/minute(s), h/hr/hour(s), d/day(s).
+ * Returns 0 on success, -1 on error. Rejects negative values and values above
+ * 86400 seconds (24 hours).
  */
 int parse_sec_to_int(const char *str, int *out) {
     if (!str || !out || str[0] == '\0') {
@@ -27,20 +29,39 @@ int parse_sec_to_int(const char *str, int *out) {
         return -1;
     }
 
-    // Skip optional 's' suffix
-    if (*end == 's') end++;
+    while (*end == ' ' || *end == '\t') end++;
 
+    long multiplier = 1;
     if (*end != '\0') {
-        fprintf(stderr, "[timerd] Invalid time string (trailing junk): '%s'\n", str);
+        if (strcmp(end, "s") == 0 || strcmp(end, "sec") == 0 ||
+            strcmp(end, "second") == 0 || strcmp(end, "seconds") == 0) {
+            multiplier = 1;
+        } else if (strcmp(end, "m") == 0 || strcmp(end, "min") == 0 ||
+                   strcmp(end, "minute") == 0 || strcmp(end, "minutes") == 0) {
+            multiplier = 60;
+        } else if (strcmp(end, "h") == 0 || strcmp(end, "hr") == 0 ||
+                   strcmp(end, "hour") == 0 || strcmp(end, "hours") == 0) {
+            multiplier = 60 * 60;
+        } else if (strcmp(end, "d") == 0 || strcmp(end, "day") == 0 ||
+                   strcmp(end, "days") == 0) {
+            multiplier = 24 * 60 * 60;
+        } else {
+            fprintf(stderr, "[timerd] Invalid time string (unknown suffix): '%s'\n", str);
+            return -1;
+        }
+    }
+
+    if (val < 0 || val > LONG_MAX / multiplier) {
+        fprintf(stderr, "[timerd] Time value out of range: %ld\n", val);
         return -1;
     }
 
-    // Range check: 0-86400 seconds (0-24 hours)
-    if (val < 0 || val > 86400) {
-        fprintf(stderr, "[timerd] Time value out of range (0-86400s): %ld\n", val);
+    long seconds = val * multiplier;
+    if (seconds > 86400) {
+        fprintf(stderr, "[timerd] Time value out of range (0-86400s): %ld\n", seconds);
         return -1;
     }
 
-    *out = (int)val;
+    *out = (int)seconds;
     return 0;
 }

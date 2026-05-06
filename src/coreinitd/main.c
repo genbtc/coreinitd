@@ -66,18 +66,25 @@ void load_all_units(void) {
 int main(void) {
     fprintf(stderr, "[coreinitd-main] Starting...\n");
 
-//TODO: coreinitd-event] SIGCHLD already has a handler!
-//    if (event_loop_init() < 0)
-//        return 1;
+    if (event_loop_init() < 0)
+        return 1;
 
     // Parses and loads .service, .socket, .timer files
     load_all_units();
 
-    // Start all valid services
+    // Start services that are not activated by a socket or timer.
+    // Socket- and timer-bound services are launched on demand by their activator.
     for (size_t i = 0; i < unit_count; i++) {
-        if (loaded_units[i].type == UNIT_SERVICE) {
-            service_manager_start(&loaded_units[i]);
+        if (loaded_units[i].type != UNIT_SERVICE)
+            continue;
+
+        if (strlen(loaded_units[i].socket_unit) > 0) {
+            fprintf(stderr, "[coreinitd] Deferring socket-activated service %s (Socket=%s)\n",
+                    loaded_units[i].name, loaded_units[i].socket_unit);
+            continue;
         }
+
+        service_manager_start(&loaded_units[i]);
     }
 
     // Initialize socket activation

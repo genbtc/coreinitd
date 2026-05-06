@@ -1,3 +1,3 @@
 [Socket]
-ListenStream=9999
+ListenStream=/tmp/coreinitd-example.sock
 Accept=no
