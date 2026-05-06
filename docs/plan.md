@@ -1,161 +1,95 @@
-# coreinitd: A Minimal Init and Service Manager using Bash + libsystemd + C Helpers
+# coreinitd Project Plan and Status
 
 ## Overview
 
-`coreinitd` is a minimal init and service supervision system, built around `bash` and compiled helpers using `libsystemd.so`. It is designed to replicate essential systemd features including socket/timer activation, D-Bus service management, and cgroup-based sandboxing, but without relying on the systemd binary or CLI tools.
+`coreinitd` is a minimal init and service supervision system. The current implementation is mostly C, with shell scripts and helper binaries used where they make experimentation easier. It links against `libsystemd` or `libelogind` for `sd-event`/low-level compatibility helpers, but the project goal is to avoid depending on the systemd service-manager binary or CLI tools.
 
-## Assumptions
+## Current Assumptions
 
-- `libsystemd.so` is available for linking
-- `bash` is the available scripting shell
-- `logind` is present and functional (for user/session D-Bus access)
-- `journald` is not required (logs go to plain files or stdout/stderr)
-- The goal is *not* to clone all of systemd, but to support a minimal working alternative
+- `libsystemd` or `libelogind` is available when building the daemon.
+- `bash`/POSIX shell scripts remain useful for bootstrapping and tests, but the daemon path is C-first.
+- Logs currently go to stdout/stderr.
+- The project is not trying to clone all of systemd; it is targeting a minimal, inspectable subset.
 
-## Current Components
-| Module                | Status | Description                                               |
-| --------------------- | ------ | --------------------------------------------------------- |
-| `main.c`              | ✅      | Initializes the system, event loop, unit loading          |
-| `event_loop.c`        | ✅      | Wraps `sd-event`                                          |
-| `unit_loader.c`       | ✅      | Parses `.service`, `.socket`, `.timer` units into structs |
-| `socket_activation.c` | ✅      | Binds and monitors `ListenStream` Unix sockets            |
-| `service_manager.c`   | ✅      | Starts `.service` units, tracks state                     |
-| `timerd.c`            | 🟡     | Spawns dummy timer handlers (needs service linkage)       |
+## Finished / Working Components
 
-## Internal State
--    Unit loaded_units[] is global and shared across all subsystems
--    Services are being launched directly after unit load, and socket events trigger services
--    Reaping of dead processes is connected to event loop and tracked
--    No FD passing yet (LISTEN_FDS), no real sandboxing or cgroups yet
--    No Accept=yes logic (per-client socket forking)
+| Module / Area | Status | Notes |
+| --- | --- | --- |
+| `main.c` | ✅ Working | Loads runtime config, initializes `sd-event`, loads units, starts non-socket services, starts socket/timer activation, and performs shutdown cleanup. |
+| `config.c` / `config.h` | ✅ Working | Reads `etc/coreinitd.conf` or `COREINITD_CONFIG`; supports INI/TOML-style flat `key=value` settings for `unit_dir`, `max_units`, `max_services`, and `max_sockets`. |
+| `event_loop.c` | ✅ Working | Wraps the global `sd-event` loop and handles `SIGCHLD`, `SIGINT`, and `SIGTERM`. |
+| `unit_loader.c` | ✅ Working | Parses `.service`, `.socket`, and `.timer` unit files and many common systemd-style verbs into `Unit` structs. |
+| `service_manager.c` | ✅ Basic | Starts services with `/bin/sh -c`, tracks PIDs in a fixed table capped by runtime config, and stops children during shutdown. |
+| `socket_activation.c` | ✅ Basic | Centralized socket activation file; handles UNIX stream sockets and IPv4 `host:port` stream sockets. The old `socket_stream.c` is now duplicate boilerplate and should be deleted once downstream references are removed. |
+| `timerd.c` | ✅ Basic | Registers timer events in the main event loop and triggers matching services. |
+| Meson tests | ✅ Working in supported environments | `meson test` runs parser tests and the UNIX socket activation smoke test when build dependencies are available. |
 
-## Core Components
+## Unfinished / Planned Work
 
-### 1. coreinitd (Main System Daemon)
+| Area | Status | Next step |
+| --- | --- | --- |
+| Socket FD passing | ❌ Not implemented | Pass accepted/listening descriptors to services using the `LISTEN_FDS`/`LISTEN_PID` convention instead of accepting and closing clients in the daemon. |
+| `Accept=yes` sockets | ❌ Not implemented | Spawn or template per-client service instances. |
+| Dependency ordering | 🟡 Parsed only | Enforce `After=`, `Requires=`, `PartOf=`, and related dependency edges before starting units. |
+| Restart policies | 🟡 Parsed/basic state only | Implement `Restart=`, `RestartSec=`, success/failure exit classification, and backoff/start-limit behavior. |
+| Sandboxing | 🟡 Scaffolding | Wire `Sandbox=true`, capabilities, cgroups, seccomp, namespaces, and `NoNewPrivileges` into the service launch path. |
+| D-Bus management | ❌ Not implemented | Add a small management interface if systemd-compatible tooling is a goal. |
+| Logging | ❌ Not implemented | Decide between plain log files, syslog, structured stdout/stderr capture, or another minimal backend. |
+| Installation paths | 🟡 Experimental | Replace hard-coded install destinations (`/sbin`, `/usr/bin`) with Meson options before packaging. |
 
-- Core event loop using `sd-event`
-- Launches and tracks services
-- Handles child reaping, restart logic, and socket/timer event dispatch
-- Acts as the PID 1 (in minimal boot scenarios) or the system orchestrator
+## Runtime Configuration Plan
 
-### 2. C Helpers (Linked against libsystemd)
+Runtime configuration now replaces several old compile-time settings. The daemon reads `./etc/coreinitd.conf` by default and can be pointed at another file with `COREINITD_CONFIG`.
 
-- `notify-ready`: wraps `sd_notify("READY=1")`
-- `listen-fds`: wraps `sd_listen_fds()` to expose socket file descriptors
-- `check-socket`: verifies socket properties via `sd_is_socket_*()`
-- `sandbox-launch`: sets up cgroups, seccomp, namespaces
-- `my-timerd`: parses `.timer` definitions and schedules launches
-- `sd-busd`: manages a limited `org.freedesktop.systemd1` interface over D-Bus
+Supported keys:
 
-### 3. Bash Components
-
-- `init.sh`: PID 1 launcher or system entrypoint
-- `service-launcher.sh`: parses unit files and starts services
-- `unitd`: optional top-level bash orchestrator that delegates to helpers
-
-## Unit Format Specification
-
-### .service
-
-```ini
-[Unit]
-Description=Foo Daemon
-
-[Service]
-ExecStart=/usr/bin/foo
-NotifyAccess=main
-Sandbox=true
-Socket=foo.socket
+```toml
+unit_dir = "./etc/units"
+max_units = 64
+max_services = 64
+max_sockets = 64
 ```
 
-### .socket
+Uppercase aliases (`UNIT_DIR`, `MAX_UNITS`, `MAX_SERVICES`, `MAX_SOCKETS`) are accepted for compatibility with the existing config file. Runtime limits are clamped to the compiled table capacities until the internal arrays are replaced with dynamically allocated storage.
 
-```ini
-[Socket]
-ListenStream=12345
-Accept=no
+## Socket Activation Plan
+
+Current behavior:
+
+- `.socket` units use `ListenStream=`.
+- Absolute paths create UNIX stream sockets.
+- `IPv4:port`, `0.0.0.0:port`, `*:port`, and `:port` create IPv4 stream sockets.
+- The daemon starts the matching service on activity and accepts/closes the client connection as a placeholder.
+
+Next socket milestones:
+
+1. Delete or stop carrying `src/coreinitd/socket_stream.c` after confirming nothing includes or builds it.
+2. Implement `LISTEN_FDS`/`LISTEN_PID` descriptor passing.
+3. Preserve accepted client FDs long enough for activated services to consume them.
+4. Add `Accept=yes` semantics.
+5. Add tests for IPv4 socket activation in addition to the existing UNIX smoke test.
+
+## Build and Test Plan
+
+Primary commands:
+
+```sh
+meson setup build
+meson compile -C build
+meson test -C build
 ```
 
-### .timer
+Current Meson test coverage:
 
-```ini
-[Timer]
-OnBootSec=10s
-OnUnitActiveSec=1h
-Unit=foo.service
-```
+- `parse-sec`: time string parser.
+- `unit-parsing`: `.service`, `.socket`, `.timer`, and verb coverage parsing.
+- `config-parsing`: runtime config parser.
+- `unix-socket-activation`: daemon smoke test using `/tmp/coreinitd-example.sock`.
 
-## Implementation Goals
+## Suggested Next Steps
 
-- Fully bootstrap system via `bash` + `coreinitd`
-- Avoid reliance on compiled systemd tools (`systemctl`, `journalctl`, etc.)
-- Maintain simplicity and transparency of Unix philosophy
-- Enable modular unit launch and dynamic configuration loading
-
-## Directory Layout
-
-Old:
-```
-coreinitd/
-├── coreinitd/                # C implementation of the main system daemon
-├── helpers/                  # C wrappers for libsystemd functions
-│   ├── notify-ready.c
-│   ├── listen-fds.c
-│   ├── check-socket.c
-│   ├── sandbox-launch.c
-│   ├── my-timerd.c
-│   └── sd-busd.c
-├── scripts/                  # Bash orchestration scripts
-│   ├── init.sh
-│   ├── service-launcher.sh
-│   └── unitd
-├── units/                    # .service, .socket, .timer files
-├── docs/                     # Design docs and documentation
-│   └── plan.md               # Initial architectural plan
-└── meson.build               # Build system for helpers and coreinitd
-```
-
-New:
-```
-coreinitd/
-├── meson.build           ← future build system
-├── README.md
-├── docs/
-│   ├── plan.md
-│   └── design.md         ← create this soon
-├── etc/
-│   └── units/            ← your `.service`, `.socket`, `.timer` files
-├── src/
-│   └── coreinitd/
-│       ├── main.c
-│       ├── event_loop.c/.h
-│       ├── unit_loader.c/.h
-│       ├── socket_activation.c/.h
-│       ├── service_manager.c/.h
-│       ├── timerd.c/.h     ← still stubbed
-│       └── util.c/.h       ← shared helpers (coming soon)
-```
-
-## Future Considerations v1
-
-- Add support for graphical targets
-- Introduce optional `dbus-broker` compatibility
-- Explore logging integration via `syslog` or structured stdout capture
-
-
-## Considerations - Suggested Next Steps
-
-1. Feature Expansion (launch logic)
--    Implement FD passing (LISTEN_FDS) to services
--    Implement Accept=yes sockets (spawn new service per connection)
-2. System Behavior
--    Start tracking unit state transitions (inactive → activating → active → failed)
--    Add rudimentary unit dependency tracking: Requires=, After=
-3. Architecture & Docs
--    Write up docs/design.md to capture the architecture you’ve implemented
--    Add meson.build to prepare for builds on other systems
-
----
-
-This document serves as the initial technical direction and architectural plan for the `coreinitd` project.
-
+1. Remove `src/coreinitd/socket_stream.c` after this consolidation lands.
+2. Replace static service/socket/unit arrays with dynamically allocated tables so runtime limits are not capped at compile-time capacities.
+3. Implement descriptor passing for socket-activated services.
+4. Enforce unit dependency ordering.
+5. Expand Meson tests for IPv4 sockets and timer-triggered services.

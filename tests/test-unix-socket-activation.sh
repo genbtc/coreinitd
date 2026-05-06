@@ -16,12 +16,13 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-if [ ! -x ./build/coreinitd ]; then
-    echo "./build/coreinitd is missing; build with: meson setup build && meson compile -C build" >&2
+COREINITD_BIN=${COREINITD_BIN:-./build/coreinitd}
+if [ ! -x "$COREINITD_BIN" ]; then
+    echo "$COREINITD_BIN is missing; build with: meson setup build && meson compile -C build" >&2
     exit 77
 fi
 
-./build/coreinitd >"$LOG_FILE" 2>&1 &
+"$COREINITD_BIN" >"$LOG_FILE" 2>&1 &
 PID=$!
 
 python3 - <<'PY'

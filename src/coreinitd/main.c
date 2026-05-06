@@ -9,10 +9,10 @@
 #include <sys/types.h>
 #include <systemd/sd-event.h>
 #include "unit_loader.h"
+#include "config.h"
 
-#define UNIT_DIR "./etc/units"
-#define MAX_UNITS 64
-static Unit loaded_units[MAX_UNITS];
+static CoreinitdConfig config;
+static Unit loaded_units[COREINITD_MAX_UNITS_CAPACITY];
 static size_t unit_count = 0;
 
 #include "service_manager.h"
@@ -21,7 +21,8 @@ static size_t unit_count = 0;
 #include "event_loop.h"
 
 void load_all_units(void) {
-    DIR *d = opendir(UNIT_DIR);
+    unit_count = 0;
+    DIR *d = opendir(config.unit_dir);
     if (!d) {
         perror("opendir failed");
         return;
@@ -33,13 +34,13 @@ void load_all_units(void) {
             strstr(ent->d_name, ".socket") ||
             strstr(ent->d_name, ".timer"))) continue;
 
-        if (unit_count >= MAX_UNITS) {
-            fprintf(stderr, "[coreinitd] Unit limit reached\n");
+        if (unit_count >= config.max_units) {
+            fprintf(stderr, "[coreinitd] Unit limit reached (%zu)\n", config.max_units);
             break;
         }
 
         char path[512];
-        snprintf(path, sizeof(path), "%s/%s", UNIT_DIR, ent->d_name);
+        snprintf(path, sizeof(path), "%s/%s", config.unit_dir, ent->d_name);
         const char *type_str = "unknown";
 
         if (load_unit(path, &loaded_units[unit_count]) == 0) {
@@ -65,6 +66,12 @@ void load_all_units(void) {
 // ─────────────────
 int main(void) {
     fprintf(stderr, "[coreinitd-main] Starting...\n");
+
+    if (coreinitd_config_load(coreinitd_config_path(), &config) < 0)
+        return 1;
+    coreinitd_config_set_active(&config);
+    fprintf(stderr, "[coreinitd-main] Config: UNIT_DIR=%s MAX_UNITS=%zu MAX_SERVICES=%zu MAX_SOCKETS=%zu\n",
+            config.unit_dir, config.max_units, config.max_services, config.max_sockets);
 
     if (event_loop_init() < 0)
         return 1;

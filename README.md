@@ -1,42 +1,74 @@
 # coreinitd
 
-A minimal init and service manager built using Bash and libsystemd.
+`coreinitd` is a small init/service-manager experiment written in C with a few shell utilities and helper binaries. It uses `sd-event` from `libsystemd`/`libelogind` for the daemon event loop, but it does not shell out to `systemctl` or depend on the systemd service manager binary.
 
----
+## Current Status
 
-## Overview
+### Finished / working now
 
-`coreinitd` is designed to provide a lightweight alternative to systemd, using bash scripts for orchestration and small C helpers linked against `libsystemd` for low-level system integration. 
-It supports essential features such as socket and timer activation, service supervision, 
-Soon to suppor: cgroups-based sandboxing, and D-Bus unit management.
+- Meson builds the main `coreinitd` daemon and helper binaries.
+- `meson test` knows about the C parser tests and the UNIX socket activation smoke test.
+- `.service`, `.socket`, and `.timer` unit files can be loaded from a configured unit directory.
+- Runtime configuration is read from `etc/coreinitd.conf` by default, with `COREINITD_CONFIG=/path/to/file` available as an override.
+- The unit directory and runtime limits (`unit_dir`/`UNIT_DIR`, `max_units`, `max_services`, `max_sockets`) are configurable in a simple INI/TOML-style `key = value` format.
+- Non-socket-activated services are started directly by the service manager.
+- Socket activation is centralized in `src/coreinitd/socket_activation.c` and currently handles UNIX stream sockets plus IPv4 `host:port` stream sockets.
+- Timers are registered on the daemon event loop and can trigger matching services.
+
+### Unfinished / planned work
+
+- Socket activation still accepts and closes client sockets; full `LISTEN_FDS`/`LISTEN_PID` descriptor passing into activated services is not implemented yet.
+- `Accept=yes` per-connection services are parsed but not implemented.
+- Dependency ordering (`After=`, `Requires=`, `PartOf=`) is parsed but not enforced.
+- Service supervision is minimal; restart policies and full state transitions are future work.
+- Sandboxing/cgroups/seccomp helpers are present only as early scaffolding.
+- D-Bus/systemd-compatible unit management is not implemented.
 
 ## Project Structure
 
 - `src/coreinitd/`: Core daemon source code.
-- `src/helpers/`: Small C helper programs that wrap libsystemd functionality.
-- `scripts/`: Shell scripts for bootstrapping and service management.
-- `etc/units/`: Unit configuration files (.service, .socket, .timer).
-- `docs/`: Documentation and project plans.
-- `tests/`: Test scripts and helpers.
+- `src/helpers/`: Small C helper programs.
+- `scripts/`: Shell scripts for bootstrapping and service management experiments.
+- `etc/coreinitd.conf`: Runtime daemon configuration.
+- `etc/units/`: Example unit files (`.service`, `.socket`, `.timer`).
+- `docs/`: Design notes and project plans.
+- `tests/`: Parser tests and socket activation smoke tests.
 
-## Getting Started
+## Configuration
 
-1. use `meson` to Build. includes the helpers and core daemon.
-2. Place your unit files in `etc/units/`.
-3. Use `init.sh` as the system's init or for testing in containers.
+`coreinitd` reads `./etc/coreinitd.conf` unless `COREINITD_CONFIG` points somewhere else. The config format is intentionally flat and accepts both INI-style uppercase keys and TOML-style lowercase keys:
 
-## Goals
+```ini
+# ./etc/coreinitd.conf
+UNIT_DIR="./etc/units"
+MAX_UNITS=64
+MAX_SERVICES=64
+MAX_SOCKETS=64
+```
 
-- Provide a transparent and maintainable init system.
-- Minimize dependencies on external binaries.
-- Enable extensibility through modular helpers.
+Equivalent lowercase/TOML-style keys are also accepted:
+
+```toml
+unit_dir = "./etc/units"
+max_units = 64
+max_services = 64
+max_sockets = 64
+```
+
+## Build and Test
+
+```sh
+meson setup build
+meson compile -C build
+meson test -C build
+```
+
+The smoke test starts the built daemon, connects to the example UNIX socket at `/tmp/coreinitd-example.sock`, and then terminates the daemon.
 
 ## License
 
-TBD most likely GPL
+TBD, most likely GPL.
 
 ## Contact
 
 Project maintainer: genBTC
-
----
