@@ -1,0 +1,34 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --unit-dir systemd-user --show-unit dunst.service
+[coreinitd-main] Starting...
+[coreinitd-main] Config: UNIT_DIR=systemd-user MAX_UNITS=64 MAX_SERVICES=64 MAX_SOCKETS=64
+[coreinitd] Loaded main service unit: emacs.service → /usr/bin/emacs --fg-daemon
+[coreinitd] Loaded main service unit: gpg-agent.service → /usr/bin/gpg-agent --deprecated-supervised
+[coreinitd] Loaded main socket unit: gpg-agent-browser.socket → %t/gnupg/S.gpg-agent.browser
+[coreinitd] Loaded main service unit: syncthing.service → /usr/bin/syncthing serve --no-browser --no-restart
+[coreinitd] Loaded main service unit: gvfs-daemon.service → dbus://org.gtk.vfs.Daemon
+[coreinitd] Loaded main service unit: at-spi-dbus-bus.service → dbus://org.a11y.Bus
+[coreinitd] Loaded main socket unit: dirmngr.socket → %t/gnupg/S.dirmngr
+[coreinitd] Loaded main service unit: xfconfd.service → dbus://org.xfce.Xfconf
+[coreinitd] Loaded main service unit: thunar.service → dbus://org.xfce.FileManager
+[coreinitd] Loaded main service unit: dconf.service → dbus://ca.desrt.dconf
+[coreinitd] Loaded main service unit: gvfs-metadata.service → dbus://org.gtk.vfs.Metadata
+[coreinitd] Loaded main service unit: dirmngr.service → /usr/bin/dirmngr --deprecated-supervised
+[coreinitd] Loaded main socket unit: gpg-agent-extra.socket → %t/gnupg/S.gpg-agent.extra
+[coreinitd] Loaded main service unit: gvfs-mtp-volume-monitor.service → dbus://org.gtk.vfs.MTPVolumeMonitor
+[coreinitd] Loaded main socket unit: gpg-agent-ssh.socket → %t/gnupg/S.gpg-agent.ssh
+[coreinitd] Loaded main socket unit: gpg-agent.socket → %t/gnupg/S.gpg-agent
+[coreinitd] Loaded main service unit: xfce4-notifyd.service → dbus://org.freedesktop.Notifications
+[coreinitd] Loaded main service unit: dunst.service → dbus://org.freedesktop.Notifications
+Name=systemd-user/dunst.service
+Type=service
+[Unit]
+Description=Dunst notification daemon
+After[0]=graphical-session.target
+Documentation[0]=man:dunst(1)
+PartOf[0]=graphical-session.target
+[Service]
+BusName=org.freedesktop.Notifications
+ExecReload=/usr/bin/dunstctl reload
+ExecStart=/usr/bin/dunst
+Slice=session.slice
+TypeName=dbus

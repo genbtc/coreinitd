@@ -1,0 +1,40 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --unit-dir systemd-user --list-units
+[coreinitd-main] Starting...
+[coreinitd-main] Config: UNIT_DIR=systemd-user MAX_UNITS=64 MAX_SERVICES=64 MAX_SOCKETS=64
+[coreinitd] Loaded main service unit: emacs.service → /usr/bin/emacs --fg-daemon
+[coreinitd] Loaded main service unit: gpg-agent.service → /usr/bin/gpg-agent --deprecated-supervised
+[coreinitd] Loaded main socket unit: gpg-agent-browser.socket → %t/gnupg/S.gpg-agent.browser
+[coreinitd] Loaded main service unit: syncthing.service → /usr/bin/syncthing serve --no-browser --no-restart
+[coreinitd] Loaded main service unit: gvfs-daemon.service → dbus://org.gtk.vfs.Daemon
+[coreinitd] Loaded main service unit: at-spi-dbus-bus.service → dbus://org.a11y.Bus
+[coreinitd] Loaded main socket unit: dirmngr.socket → %t/gnupg/S.dirmngr
+[coreinitd] Loaded main service unit: xfconfd.service → dbus://org.xfce.Xfconf
+[coreinitd] Loaded main service unit: thunar.service → dbus://org.xfce.FileManager
+[coreinitd] Loaded main service unit: dconf.service → dbus://ca.desrt.dconf
+[coreinitd] Loaded main service unit: gvfs-metadata.service → dbus://org.gtk.vfs.Metadata
+[coreinitd] Loaded main service unit: dirmngr.service → /usr/bin/dirmngr --deprecated-supervised
+[coreinitd] Loaded main socket unit: gpg-agent-extra.socket → %t/gnupg/S.gpg-agent.extra
+[coreinitd] Loaded main service unit: gvfs-mtp-volume-monitor.service → dbus://org.gtk.vfs.MTPVolumeMonitor
+[coreinitd] Loaded main socket unit: gpg-agent-ssh.socket → %t/gnupg/S.gpg-agent.ssh
+[coreinitd] Loaded main socket unit: gpg-agent.socket → %t/gnupg/S.gpg-agent
+[coreinitd] Loaded main service unit: xfce4-notifyd.service → dbus://org.freedesktop.Notifications
+[coreinitd] Loaded main service unit: dunst.service → dbus://org.freedesktop.Notifications
+TYPE	NAME	DESCRIPTION
+service	systemd-user/emacs.service	Emacs text editor
+service	systemd-user/gpg-agent.service	GnuPG cryptographic agent and passphrase cache
+socket	systemd-user/gpg-agent-browser.socket	GnuPG cryptographic agent and passphrase cache (access for web browsers)
+service	systemd-user/syncthing.service	Syncthing - Open Source Continuous File Synchronization
+service	systemd-user/gvfs-daemon.service	Virtual filesystem service
+service	systemd-user/at-spi-dbus-bus.service	Accessibility services bus
+socket	systemd-user/dirmngr.socket	GnuPG network certificate management daemon
+service	systemd-user/xfconfd.service	Xfce configuration service
+service	systemd-user/thunar.service	Thunar file manager
+service	systemd-user/dconf.service	User preferences database
+service	systemd-user/gvfs-metadata.service	Virtual filesystem metadata service
+service	systemd-user/dirmngr.service	GnuPG network certificate management daemon
+socket	systemd-user/gpg-agent-extra.socket	GnuPG cryptographic agent and passphrase cache (restricted)
+service	systemd-user/gvfs-mtp-volume-monitor.service	Virtual filesystem service - Media Transfer Protocol monitor
+socket	systemd-user/gpg-agent-ssh.socket	GnuPG cryptographic agent (ssh-agent emulation)
+socket	systemd-user/gpg-agent.socket	GnuPG cryptographic agent and passphrase cache
+service	systemd-user/xfce4-notifyd.service	XFCE notifications service
+service	systemd-user/dunst.service	Dunst notification daemon

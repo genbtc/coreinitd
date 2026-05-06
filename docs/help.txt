@@ -1,0 +1,30 @@
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --version
+coreinitd 0.14
+genr8eofl@genr8too ~/src/coreinitd $ ./build/coreinitd --help
+coreinitd - small systemd-like service/socket/timer daemon
+
+Usage:
+  ./build/coreinitd [OPTIONS]
+
+Core options:
+  -h, --help                 Show this help text and exit
+  -V, --version              Show version and exit
+  -c, --config PATH          Read config from PATH (default: ./etc/coreinitd.conf or COREINITD_CONFIG)
+  -u, --unit-dir DIR         Override the configured unit directory
+      --drop-in DIR          Load extra unit snippets from DIR after the main unit dir
+      --check                Parse configuration and unit files, then exit
+      --list-units           Parse units and print a compact unit table
+      --show-unit UNIT       Print parsed fields for UNIT (name or path)
+
+Daemon/test controls:
+      --no-services          Do not auto-start plain .service units
+      --no-sockets           Do not listen on .socket units
+      --no-timers            Do not schedule .timer units
+      --run-for-sec SEC      Leave the event loop after SEC seconds (test/smoke mode)
+      --timer-fires N        Leave after N timer callbacks (tests OnUnitActiveSec recurrence)
+
+Argument roadmap:
+  start|stop|restart UNIT, status UNIT, cat UNIT, verify UNIT,
+  daemon --foreground, --log-level LEVEL, --pid-file PATH, --state-dir DIR,
+  timer trigger UNIT, timer list, socket list, socket fdinfo UNIT,
+  --user/--system, --root DIR, --set KEY=VALUE, --drop-in DIR, --dry-run.
